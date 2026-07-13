@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>EVG — Connexion</title>
+  <script src="redirect.js"></script>
+  <link rel="stylesheet" href="tailwind.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-900 text-white min-h-screen select-none">
+
+  <div class="min-h-screen flex flex-col items-center justify-center p-6"
+       style="background: linear-gradient(135deg, #1a1a2e 0%, #16213e 50%, #0f3460 100%)">
+
+    <div class="fade-up text-center mb-10">
+      <div class="text-7xl mb-3">🎉</div>
+      <h1 class="text-5xl font-black tracking-widest text-yellow-400 uppercase">EVG</h1>
+      <p class="text-gray-400 mt-2 text-lg">C'est l'EVG de qui ?</p>
+    </div>
+
+    <div class="w-full max-w-sm flex flex-col gap-4">
+
+      <!-- Champ identifiant -->
+      <input
+        id="identifier-input"
+        type="text"
+        placeholder="Prénom"
+        autocomplete="off"
+        autocorrect="off"
+        autocapitalize="off"
+        spellcheck="false"
+        class="w-full bg-gray-800 border-2 border-gray-600 focus:border-yellow-400
+               text-white text-lg text-center py-4 px-4 rounded-2xl outline-none
+               placeholder-gray-500 transition-colors"
+      />
+
+      <!-- Message d'erreur -->
+      <p id="error-msg"
+         class="text-red-400 text-center text-sm font-semibold hidden">
+      </p>
+
+      <!-- Bouton valider -->
+      <button
+        id="login-btn"
+        class="w-full bg-yellow-400 hover:bg-yellow-300 active:scale-95
+               text-gray-900 font-black text-xl py-4 rounded-2xl
+               transition-all shadow-2xl disabled:opacity-50 disabled:cursor-not-allowed"
+      >
+        C'est parti ! 🎉
+      </button>
+
+      <!-- Loader (caché par défaut) -->
+      <div id="loader" class="flex justify-center hidden">
+        <div class="w-8 h-8 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script>
+    // Si déjà connecté, rediriger vers la page cible
+    const urlParams  = new URLSearchParams(window.location.search);
+    const targetPage = sanitizeTargetPage(urlParams.get('page'));
+    if (isAuthenticated()) {
+      window.location.replace(targetPage);
+    }
+
+    const input    = document.getElementById('identifier-input');
+    const btn      = document.getElementById('login-btn');
+    const errorMsg = document.getElementById('error-msg');
+    const loader   = document.getElementById('loader');
+
+    function showError(msg) {
+      errorMsg.textContent = msg;
+      errorMsg.classList.remove('hidden');
+      input.classList.add('border-red-500');
+      input.classList.remove('border-gray-600', 'border-yellow-400');
+    }
+
+    function clearError() {
+      errorMsg.classList.add('hidden');
+      input.classList.remove('border-red-500');
+      input.classList.add('border-gray-600');
+    }
+
+    function setLoading(active) {
+      btn.disabled = active;
+      loader.classList.toggle('hidden', !active);
+      btn.classList.toggle('hidden', active);
+    }
+
+    function onSubmit() {
+      clearError();
+      const identifier = input.value.trim();
+      if (!identifier) {
+        showError('Saisis ton identifiant avant de continuer.');
+        return;
+      }
+      doLogin(identifier, showError, setLoading);
+    }
+
+    btn.addEventListener('click', onSubmit);
+
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') onSubmit();
+    });
+
+    input.addEventListener('input', clearError);
+  </script>
+</body>
+</html>

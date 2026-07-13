@@ -1,0 +1,29 @@
+# Fichiers de config locale contenant de vrais secrets (si utilisés un jour)
+config.local.js
+*.local.js
+.env
+.env.*
+
+# Documentation technique (architecture, sécurité, déploiement) — privée,
+# jamais publiée sur le dépôt public.
+DEVELOPER.md
+
+# Données brutes non chiffrées des performers — jamais committées.
+# Seule la version chiffrée (performers_data.json) est versionnée et servie.
+performers_data_source*.json
+pornstar_listing_final.json
+
+# Outils de préparation hors site servi : caches de scraping en clair
+# (noms/descriptions/URLs de contenu sensible) + données brutes locales.
+Prepare_data/
+
+# Fichiers OS / éditeur
+.DS_Store
+Thumbs.db
+
+# Config locale de l'outil Claude Code — spécifique à la machine du dev,
+# jamais partagée (permissions locales, etc.).
+.claude/settings.local.json
+
+# Node (Prepare_data/photo_picker_server.js + build Tailwind)
+node_modules/

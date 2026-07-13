@@ -1,0 +1,156 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>EVG — Dashboard</title>
+  <script src="redirect.js"></script>
+  <link rel="stylesheet" href="tailwind.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-900 text-white select-none overflow-hidden" style="height:100dvh">
+
+
+  <div class="relative flex flex-col p-4" style="height:100dvh">
+
+    <header class="flex items-center justify-between flex-shrink-0 mb-3">
+      <div class="flex items-center gap-1.5 leading-none">
+        <span class="text-xl leading-none">🎉</span>
+        <span class="font-black text-sm leading-none">EVG <span class="text-yellow-400 evg-nav-name">…</span></span>
+      </div>
+      <button id="logout-btn"
+              class="flex items-center gap-1 bg-red-900/30 hover:bg-red-800/50 border border-red-700/30
+                     text-red-400 hover:text-red-300 text-xs font-black px-3 py-1.5 rounded-full
+                     transition-all active:scale-90">
+        🚪 Quitter
+      </button>
+    </header>
+
+    <main id="main-tiles" class="flex-1 flex flex-col max-w-md mx-auto w-full min-h-0 invisible" style="gap:clamp(6px,2vh,20px)">
+
+      <!-- Tuile : Quiz de la Galerie -->
+      <a href="quiz" data-feature="quiz"
+         class="flex-1 min-h-0 block bg-gradient-to-br from-purple-600 to-pink-600
+                hover:from-purple-500 hover:to-pink-500
+                rounded-2xl px-5 text-left shadow-2xl flex flex-col justify-center
+                active:scale-[0.97] transition-all no-underline">
+        <div class="text-3xl mb-1">❓</div>
+        <h3 class="text-xl font-black leading-tight">Quiz</h3>
+        <p class="text-purple-200 text-xs mt-0.5">Tu crois les connaître ?</p>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">🎯 Duo – 1 pt</span>
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">🎲 Carré – 3 pts</span>
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">💰 Cash – 5 pts</span>
+        </div>
+      </a>
+
+      <!-- Tuile : Séquence Mémo -->
+      <a href="flash" data-feature="flash"
+         class="flex-1 min-h-0 block bg-gradient-to-br from-orange-500 to-red-600
+                hover:from-orange-400 hover:to-red-500
+                rounded-2xl px-5 text-left shadow-2xl flex flex-col justify-center
+                active:scale-[0.97] transition-all no-underline">
+        <div class="text-3xl mb-1">🧠</div>
+        <h3 class="text-xl font-black leading-tight">Mémoire</h3>
+        <p class="text-orange-200 text-xs mt-0.5">Retiens bien ce que tu vois</p>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">📈 5 manches</span>
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">⚡ De plus en plus dur</span>
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">⏱️ Record de temps</span>
+        </div>
+      </a>
+
+      <!-- Tuile : Ticket Gagnant -->
+      <a href="scratch" data-feature="scratch"
+         class="flex-1 min-h-0 block bg-gradient-to-br from-green-600 to-emerald-700
+                hover:from-green-500 hover:to-emerald-600
+                rounded-2xl px-5 text-left shadow-2xl flex flex-col justify-center
+                active:scale-[0.97] transition-all no-underline">
+        <div class="text-3xl mb-1">🎰</div>
+        <h3 class="text-xl font-black leading-tight">Tentez votre chance</h3>
+        <p class="text-green-100 text-xs mt-0.5">Quelqu'un va morfler ce soir</p>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">🤞 Bonne chance…</span>
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">🍺 Ou pas</span>
+        </div>
+      </a>
+
+      <!-- Tuile : Classement -->
+      <a href="scores" id="tile-scores"
+         class="flex-1 min-h-0 block bg-gradient-to-br from-yellow-500 to-amber-600
+                hover:from-yellow-400 hover:to-amber-500
+                rounded-2xl px-5 text-left shadow-2xl flex flex-col justify-center
+                active:scale-[0.97] transition-all no-underline">
+        <div class="text-3xl mb-1">🏆</div>
+        <h3 class="text-xl font-black leading-tight">Classement</h3>
+        <p class="text-yellow-100 text-xs mt-0.5">Qui s'en sort le mieux ?</p>
+        <div class="mt-2 flex flex-wrap gap-1.5">
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">🥇 Meilleurs scores</span>
+          <span class="bg-white/20 rounded-full px-2.5 py-0.5 text-xs font-semibold">👑 Hall of fame</span>
+        </div>
+      </a>
+
+    </main>
+
+    <!-- Loader plein écran — masque les tuiles tant que les accès ne sont pas vérifiés -->
+    <div id="tiles-loader" class="absolute inset-0 flex flex-col items-center justify-center gap-3">
+      <div class="w-10 h-10 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-gray-500 text-xs animate-pulse">Préparation…</p>
+    </div>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('logout-btn').addEventListener('click', doLogout);
+
+      const main   = document.getElementById('main-tiles');
+      const loader = document.getElementById('tiles-loader');
+
+      // Bouton admin — injecté uniquement si scope admin
+      if (isAdmin()) {
+        const adminTile = document.createElement('a');
+        adminTile.href = 'admin';
+        adminTile.className = [
+          'flex-none block bg-gradient-to-br from-gray-700 to-gray-800',
+          'hover:from-gray-600 hover:to-gray-700',
+          'rounded-2xl px-5 py-3 text-left shadow-2xl flex items-center gap-4',
+          'active:scale-[0.97] transition-all no-underline border border-white/10',
+        ].join(' ');
+        adminTile.innerHTML = `
+          <span class="text-2xl">⚙️</span>
+          <div>
+            <h3 class="text-base font-black leading-tight text-white">Administration</h3>
+            <p class="text-gray-400 text-xs mt-0.5">Configuration du site</p>
+          </div>
+          <span class="ml-auto text-xs font-black text-yellow-400 bg-yellow-400/10
+                        px-2 py-0.5 rounded-full">ADMIN</span>`;
+        main.appendChild(adminTile);
+      } else {
+        // Masque les tuiles désactivées pour cet EVG (l'admin n'a pas de
+        // ligne dans le Sheet "Configs" donc voit toujours tout).
+        try {
+          const res = await getConfigs(getEvgName());
+          if (res.status === 'ok' && res.configs) {
+            applyFeatureConfigs(res.configs);
+            setCachedConfigs(res.configs);
+
+            // La tuile Classement n'a pas de data-feature dédié : elle est
+            // masquée dès lors qu'aucun jeu pouvant produire un score n'est
+            // activé pour cet EVG (scratch n'a pas de score, donc exclu).
+            const anyScoreGame = ['quiz', 'heta', 'digamma', 'beta', 'flash']
+              .some((key) => res.configs[key] !== false);
+            if (!anyScoreGame) document.getElementById('tile-scores').classList.add('hidden');
+          }
+        } catch (err) {
+          console.warn('[CONFIGS] Échec du chargement des accès :', err);
+        }
+      }
+
+      loader.classList.add('hidden');
+      main.classList.remove('invisible');
+    });
+  </script>
+</body>
+</html>

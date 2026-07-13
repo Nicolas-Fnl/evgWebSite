@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>EVG — Séquence Mémo</title>
+  <script src="redirect.js"></script>
+  <link rel="stylesheet" href="tailwind.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-900 text-white min-h-screen select-none">
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : INTRO / RÈGLES
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-intro" class="game-section min-h-screen flex flex-col">
+
+    <header class="relative flex items-center justify-between p-4">
+      <a href="./" class="relative z-10 flex items-center gap-1.5 leading-none hover:opacity-75 active:scale-95 transition-all flex-shrink-0">
+        <span class="text-xl leading-none">🎉</span>
+        <span class="font-black text-sm leading-none">EVG <span class="text-yellow-400 evg-nav-name">…</span></span>
+      </a>
+      <h2 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[60%] truncate text-base font-black text-orange-400 uppercase tracking-wider">
+        🧠 Séquence Mémo
+      </h2>
+      <div class="w-8 flex-shrink-0"></div>
+    </header>
+
+    <div class="flex-1 flex flex-col items-center justify-center p-5 text-center">
+      <div class="text-6xl mb-4">🧠</div>
+      <h3 class="text-2xl font-black mb-2">Comment jouer</h3>
+      <p class="text-gray-400 text-sm mb-5 max-w-xs">
+        Les tuiles se retournent une à une — mémorise l'ordre !
+        Puis dis-les toutes à voix haute et stoppe le chrono.
+      </p>
+
+      <div class="bg-white/10 rounded-2xl p-5 mb-5 max-w-xs w-full space-y-3 text-left text-sm">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl w-8 text-center">👀</span>
+          <span class="text-gray-300">Regarde les tuiles se retourner</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-2xl w-8 text-center">🗣️</span>
+          <span class="text-gray-300">Dis-les dans l'ordre d'apparition</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-2xl w-8 text-center">⏱️</span>
+          <span class="text-gray-300">Stoppe le chrono quand tu as tout dit</span>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-2xl w-8 text-center">📈</span>
+          <span class="text-gray-300">5 manches · +2 tuiles à chaque fois</span>
+        </div>
+      </div>
+
+      <p class="text-gray-500 text-xs mb-6">2 → 4 → 6 → 8 → 9 tuiles · Le temps total fait ton record</p>
+
+      <button id="intro-btn" onclick="initAndStart()"
+        class="bg-orange-500 hover:bg-orange-400 text-white font-black text-xl
+               px-12 py-4 rounded-2xl active:scale-95 transition-all shadow-2xl
+               ring-4 ring-orange-400/40">
+        GO ! 🧠
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : JEU
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-game" class="game-section hidden min-h-screen flex flex-col">
+
+    <header class="flex items-center justify-between p-4 flex-shrink-0">
+      <div class="w-8"></div>
+      <h2 id="memo-round-label"
+          class="text-base font-black text-orange-400 uppercase tracking-wider">
+        Manche 1 / 5
+      </h2>
+      <div class="w-8"></div>
+    </header>
+
+    <div class="flex-1 flex flex-col items-center justify-center px-4 pb-6 gap-5">
+
+      <p id="memo-status" class="text-gray-300 text-sm font-semibold tracking-wide">
+        Observe !
+      </p>
+
+      <!-- Grille de tuiles — colonnes injectées par JS -->
+      <div id="memo-grid" class="grid gap-2 w-full max-w-sm">
+      </div>
+
+      <!-- Chrono -->
+      <div id="memo-timer"
+           class="text-5xl font-black tabular-nums tracking-tighter text-white">
+        0.00 s
+      </div>
+
+      <!-- Bouton stop -->
+      <button id="memo-btn" onclick="memoStop()" disabled
+        class="w-full max-w-sm bg-orange-500 hover:bg-orange-400 disabled:opacity-40
+               text-white font-black text-2xl py-5 rounded-2xl
+               active:scale-95 transition-all shadow-2xl
+               ring-4 ring-orange-400/30">
+        J'AI DIT ! ⏱️
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : INTER-MANCHE
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-inter"
+       class="game-section hidden min-h-screen flex flex-col items-center justify-center p-5 text-center">
+
+    <div class="text-6xl mb-4">✅</div>
+    <h3 id="inter-round-label" class="text-2xl font-black text-orange-400 mb-2">
+      Manche 1 terminée !
+    </h3>
+    <p class="text-gray-400 text-sm mb-1">Ton temps :</p>
+    <p id="inter-time" class="text-5xl font-black text-white mb-3">0.00 s</p>
+    <p class="text-gray-500 text-xs mb-8">
+      Total cumulé :
+      <span id="inter-total" class="text-gray-300 font-bold">0.00 s</span>
+    </p>
+
+    <button onclick="nextRound()"
+      class="bg-orange-500 hover:bg-orange-400 text-white font-black text-xl
+             px-10 py-4 rounded-2xl active:scale-95 transition-all shadow-2xl">
+      Manche suivante →
+    </button>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : RÉSULTAT FINAL
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-result"
+       class="game-section hidden min-h-screen flex flex-col items-center justify-center p-5 text-center">
+
+    <div class="text-7xl mb-4">🏆</div>
+    <h3 class="text-3xl font-black text-orange-400 mb-1">Terminé !</h3>
+    <p class="text-gray-400 text-sm mb-2">Temps total</p>
+    <p id="result-total" class="text-6xl font-black text-white mb-4">0.00 s</p>
+
+    <div class="bg-white/10 rounded-2xl p-4 mb-4 w-full max-w-xs space-y-1"
+         id="result-breakdown">
+    </div>
+
+    <!-- Formulaire d'enregistrement du score -->
+    <div class="w-full max-w-xs mb-5">
+      <input id="result-save-name" type="text" placeholder="Entre ton pseudo pour le score"
+             oninput="_onFlashResultNameInput()"
+             autocomplete="off" autocorrect="off" autocapitalize="words"
+             class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3
+                    text-white placeholder-gray-500 text-lg
+                    focus:outline-none focus:ring-2 focus:ring-orange-400 mb-3" />
+      <button id="result-newgame-btn" onclick="saveAndRestartFlash()" disabled
+        class="w-full bg-green-500 hover:bg-green-400 disabled:opacity-40
+               text-gray-900 font-black text-lg py-3 rounded-xl
+               active:scale-95 transition-all">
+        NOUVELLE PARTIE 🔁
+      </button>
+      <p id="result-save-status" class="hidden mt-2 text-sm text-center font-semibold"></p>
+    </div>
+
+    <button id="result-back-btn" onclick="saveAndGoToMenuFlash()" disabled
+       class="w-full max-w-xs bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40
+              text-gray-900 font-black text-lg py-3 rounded-xl
+              active:scale-95 transition-all">
+      ← Retour aux jeux
+    </button>
+  </div>
+
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script src="flash.js"></script>
+  <!-- checkAuthentication() est appelé automatiquement par script.js -->
+</body>
+</html>

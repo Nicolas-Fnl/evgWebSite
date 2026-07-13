@@ -1,0 +1,329 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>EVG — Administration</title>
+  <script src="redirect.js"></script>
+  <link rel="stylesheet" href="tailwind.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-900 text-white min-h-screen select-none">
+
+  <div class="min-h-screen flex flex-col p-5">
+
+    <!-- Header — pleine largeur, comme les autres pages -->
+    <header class="relative flex items-center justify-between mb-6 flex-shrink-0">
+      <a href="./" class="relative z-10 flex items-center gap-1.5 leading-none hover:opacity-75 active:scale-95 transition-all flex-shrink-0">
+        <span class="text-xl leading-none">🎉</span>
+        <span class="font-black text-sm leading-none">EVG <span class="text-yellow-400 evg-nav-name">…</span></span>
+      </a>
+      <h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[60%] truncate text-lg font-black text-yellow-400 uppercase tracking-wider">⚙️ Admin</h1>
+      <div class="w-8 flex-shrink-0"></div>
+    </header>
+
+    <!-- Contenu — largeur limitée et centré, comme le "main" des autres pages -->
+    <div class="w-full max-w-md mx-auto flex-1 flex flex-col">
+
+      <!-- Feature Flags -->
+      <section class="mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-black text-gray-400 uppercase tracking-wider">
+            Fonctionnalités <span id="flags-evg-label" class="text-yellow-400 normal-case"></span>
+          </h2>
+          <button id="refresh-configs" onclick="loadFeatureFlags()"
+            class="text-gray-400 hover:text-white text-lg active:scale-90 transition-all">🔄</button>
+        </div>
+
+        <!-- Toggles -->
+        <div id="flags-content">
+          <span class="text-gray-600 text-xs italic px-2 py-2">Chargement…</span>
+        </div>
+
+        <button id="delete-evg-btn" onclick="confirmDeleteEvg()"
+          class="hidden w-full mt-3 bg-red-900/40 hover:bg-red-800/60 border border-red-700/40
+                 text-red-400 font-black text-sm py-2.5 rounded-xl transition-all active:scale-95">
+          🗑️ Supprimer cet EVG
+        </button>
+      </section>
+
+      <!-- Scores bruts -->
+      <section class="mb-5">
+        <div class="flex items-center justify-between mb-3">
+          <h2 class="text-xs font-black text-gray-400 uppercase tracking-wider">Scores bruts</h2>
+          <button id="refresh-scores" onclick="loadRawScores()"
+            class="text-gray-400 hover:text-white text-lg active:scale-90 transition-all">🔄</button>
+        </div>
+        <div id="raw-scores-content">
+          <div class="flex items-center justify-center h-20">
+            <span class="text-gray-500 text-sm animate-pulse">Chargement…</span>
+          </div>
+        </div>
+      </section>
+
+      <!-- Actions -->
+      <section class="mb-5">
+        <h2 class="text-xs font-black text-gray-400 uppercase tracking-wider mb-3">Actions</h2>
+        <div class="flex flex-col gap-3">
+          <button onclick="doLogout()"
+            class="w-full bg-red-900/40 hover:bg-red-800/60 border border-red-700/40
+                   text-red-400 font-black py-3 rounded-xl transition-all active:scale-95">
+            🚪 Se déconnecter
+          </button>
+        </div>
+      </section>
+
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script>
+
+    // ── Définition des fonctionnalités (doit correspondre aux colonnes
+    //    du Sheet "Configs" : quiz, heta, digamma, beta, scratch, flash) ──
+    const FEATURES = [
+      {
+        key:            'quiz',
+        emoji:          '❓',
+        label:          'Quiz de la Galerie',
+        desc:           'Tuile du menu principal',
+        defaultEnabled: true,
+      },
+      {
+        key:            'beta',
+        emoji:          '🖤',
+        label:          '', // déchiffré par applyFeatureLabels() — voir DEVELOPER.md § Sécurité
+        desc:           'Jeu dans le Quiz',
+        defaultEnabled: true,
+      },
+      {
+        key:            'digamma',
+        emoji:          '💦',
+        label:          '', // déchiffré par applyFeatureLabels()
+        desc:           'Catégorie dans le Quiz',
+        defaultEnabled: false,
+      },
+      {
+        key:            'heta',
+        emoji:          '🔥',
+        label:          '', // déchiffré par applyFeatureLabels()
+        desc:           'Catégorie dans le Quiz',
+        defaultEnabled: false,
+      },
+      {
+        key:            'scratch',
+        emoji:          '🎰',
+        label:          'Tentez votre chance',
+        desc:           'Tuile du menu principal',
+        defaultEnabled: true,
+      },
+      {
+        key:            'flash',
+        emoji:          '🧠',
+        label:          'Jeu Mémoire',
+        desc:           'Tuile du menu principal',
+        defaultEnabled: true,
+      },
+    ];
+
+    // ── Labels des catégories sensibles — réutilise les mêmes chaînes
+    //    chiffrées que quiz.js (Prepare_data/strings_source.json), pas de
+    //    texte en clair dans ce fichier. Voir DEVELOPER.md § Sécurité.
+    const FEATURE_LABEL_KEYS = { heta: 'menu-heta-title', digamma: 'menu-digamma-title', beta: 'menu-special-title' };
+    function applyFeatureLabels(strings) {
+      const s = strings || {};
+      FEATURES.forEach((f) => {
+        const key = FEATURE_LABEL_KEYS[f.key];
+        if (key && s[key]) f.label = s[key];
+      });
+    }
+
+    // ── État local : flags de l'EVG actuellement sélectionné dans l'en-tête ──
+    let currentEvg   = null;
+    let currentFlags = {};
+
+    // ── Charge les configs de l'EVG actif (voir ensureAdminEvgData(), script.js) ──
+    async function loadFeatureFlags() {
+      const content = document.getElementById('flags-content');
+      content.innerHTML = `<span class="text-gray-600 text-xs italic px-2 py-2">Chargement…</span>`;
+
+      try {
+        const { allConfigs, active } = await ensureAdminEvgData();
+        currentEvg   = active || null;
+        currentFlags = (currentEvg && allConfigs[currentEvg]) || {};
+        document.getElementById('flags-evg-label').textContent = currentEvg ? `— ${currentEvg}` : '';
+        document.getElementById('delete-evg-btn').classList.toggle('hidden', !currentEvg);
+        renderFlagsContent();
+      } catch (err) {
+        console.error('[ADMIN] Erreur chargement configs :', err);
+        content.innerHTML = `<span class="text-red-400 text-xs px-2 py-2">Erreur de chargement</span>`;
+      }
+    }
+
+    function renderFlagsContent() {
+      const content = document.getElementById('flags-content');
+
+      if (!currentEvg) {
+        content.innerHTML = `<p class="text-gray-500 text-sm italic px-2 py-4">Aucun EVG pour l'instant — utilise "+ Créer…" dans le menu déroulant en haut.</p>`;
+        return;
+      }
+
+      content.innerHTML = FEATURES.map(f => {
+        const on = currentFlags[f.key] ?? f.defaultEnabled;
+        return `
+          <div class="flex items-center justify-between bg-white/5 rounded-xl px-4 py-3 mb-2">
+            <div class="flex items-center gap-3 min-w-0">
+              <span class="text-xl flex-shrink-0">${f.emoji}</span>
+              <div class="min-w-0">
+                <p class="font-black text-sm text-white leading-tight">${escapeHtml(f.label)}</p>
+                <p class="text-gray-500 text-xs">${escapeHtml(f.desc)}</p>
+              </div>
+            </div>
+            <button data-key="${f.key}"
+              class="relative inline-flex h-6 w-11 flex-shrink-0 items-center rounded-full
+                     transition-colors ml-3 ${on ? 'bg-green-500' : 'bg-gray-600'}">
+              <span class="inline-block h-4 w-4 transform rounded-full bg-white shadow
+                           transition-transform ${on ? 'translate-x-6' : 'translate-x-1'}"></span>
+            </button>
+          </div>`;
+      }).join('');
+
+      content.querySelectorAll('button[data-key]').forEach(btn => {
+        btn.addEventListener('click', () => toggleFeature(btn.dataset.key));
+      });
+    }
+
+    // ── Bascule une config et la sauvegarde via l'API (avec rollback si échec) ──
+    async function toggleFeature(key) {
+      const previous = !!currentFlags[key];
+      const next     = !previous;
+
+      currentFlags[key] = next;
+      renderFlagsContent();
+
+      const freshBtn = document.querySelector(`#flags-content button[data-key="${key}"]`);
+      if (freshBtn) freshBtn.disabled = true;
+
+      try {
+        const formData = new FormData();
+        formData.append('action',   'setconfig');
+        formData.append('token',    getAdminToken() || '');
+        formData.append('evg_name', currentEvg);
+        formData.append('config',   key);
+        formData.append('value',    String(next));
+
+        const res  = await fetch(CONFIG.AUTH_URL, {
+          method:  'POST',
+          headers: { 'Accept': 'application/json' },
+          body:    formData,
+        });
+        const data = await res.json();
+
+        if (data.status !== 'success') throw new Error(data.message || 'Échec de la sauvegarde');
+      } catch (err) {
+        console.error('[ADMIN] setConfig échec :', err);
+        currentFlags[key] = previous;
+        renderFlagsContent();
+        alert('Échec de la mise à jour. Réessaie.');
+      }
+    }
+
+    // ── Suppression de l'EVG actif ────────────────────────────────
+    function confirmDeleteEvg() {
+      if (!currentEvg) return;
+      if (confirm(`Es-tu sûr de vouloir supprimer l'EVG "${currentEvg}" ? Cette action est irréversible.`)) {
+        deleteEvg(currentEvg);
+      }
+    }
+
+    async function deleteEvg(evgName) {
+      try {
+        const formData = new FormData();
+        formData.append('action',   'deleteuser');
+        formData.append('token',    getAdminToken() || '');
+        formData.append('evg_name', evgName);
+
+        const res  = await fetch(CONFIG.AUTH_URL, {
+          method:  'POST',
+          headers: { 'Accept': 'application/json' },
+          body:    formData,
+        });
+        const data = await res.json();
+
+        if (data.status !== 'success') throw new Error(data.message || 'Échec de la suppression');
+
+        invalidateAdminEvgData();
+        setAdminActiveEvg('');
+        window.location.reload();
+      } catch (err) {
+        console.error('[ADMIN] deleteUser échec :', err);
+        alert('Échec de la suppression : ' + err.message);
+      }
+    }
+
+    // ── Init ──────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      try {
+        applyFeatureLabels(await getUIStrings());
+      } catch (err) {
+        console.warn('[ADMIN] Échec du chargement des textes :', err);
+      }
+      loadFeatureFlags();
+      loadRawScores();
+    });
+
+    async function loadRawScores() {
+      const btn     = document.getElementById('refresh-scores');
+      const content = document.getElementById('raw-scores-content');
+      btn.style.opacity = '0.4';
+      btn.disabled = true;
+      content.innerHTML = `
+        <div class="flex items-center justify-center h-20">
+          <span class="text-gray-500 text-sm animate-pulse">Chargement…</span>
+        </div>`;
+
+      try {
+        const res  = await getAllScores();
+        const data = (res.status === 'success' && Array.isArray(res.data)) ? res.data : [];
+
+        if (data.length === 0) {
+          content.innerHTML = `
+            <div class="flex flex-col items-center justify-center h-20 text-gray-500 text-sm">
+              Aucune donnée
+            </div>`;
+        } else {
+          const rows = [...data].reverse().map(e => {
+            const name  = escapeHtml(e['prénom'] || e.prenom || '?');
+            const score = e.score ?? '—';
+            const jeu   = escapeHtml(e.jeu || '—');
+            const date  = e.date ? new Date(e.date).toLocaleString('fr-FR', {
+              day: '2-digit', month: '2-digit',
+              hour: '2-digit', minute: '2-digit'
+            }) : '—';
+            return `
+              <div class="flex items-center gap-2 px-3 py-2 rounded-xl bg-white/5 mb-1.5 text-sm">
+                <span class="font-black text-white w-20 flex-shrink-0 truncate">${name}</span>
+                <span class="text-yellow-400 font-black w-12 text-right flex-shrink-0">${score}</span>
+                <span class="text-gray-400 flex-1 truncate text-xs">${jeu}</span>
+                <span class="text-gray-600 text-xs flex-shrink-0">${date}</span>
+              </div>`;
+          }).join('');
+          const total = data.length;
+          content.innerHTML = `
+            <p class="text-gray-500 text-xs mb-2">${total} entrée${total > 1 ? 's' : ''} — plus récente en premier</p>
+            ${rows}`;
+        }
+      } catch (err) {
+        console.error('[ADMIN] Erreur chargement scores :', err);
+        content.innerHTML = `
+          <div class="text-red-400 text-sm text-center py-4">Erreur de chargement</div>`;
+      }
+
+      btn.style.opacity = '1';
+      btn.disabled = false;
+    }
+  </script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>EVG — Ticket Gagnant</title>
+  <script src="redirect.js"></script>
+  <link rel="stylesheet" href="tailwind.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-900 text-white min-h-screen select-none">
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : SETUP
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-setup" class="game-section min-h-screen flex flex-col">
+
+    <header class="relative flex items-center justify-between p-4">
+      <a href="./" class="relative z-10 flex items-center gap-1.5 leading-none hover:opacity-75 active:scale-95 transition-all flex-shrink-0">
+        <span class="text-xl leading-none">🎉</span>
+        <span class="font-black text-sm leading-none">EVG <span class="text-yellow-400 evg-nav-name">…</span></span>
+      </a>
+      <h2 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[60%] truncate text-base font-black text-green-400 uppercase tracking-wider">
+        🎰 Ticket Gagnant
+      </h2>
+      <div class="w-8 flex-shrink-0"></div>
+    </header>
+
+    <div class="flex-1 flex flex-col items-center justify-center p-5 text-center">
+      <div class="text-6xl mb-4">🎰</div>
+      <h3 class="text-2xl font-black mb-2">Qui sera piégé ?</h3>
+      <p class="text-gray-400 text-sm mb-7 max-w-xs">
+        Chaque joueur gratte une tuile. Sous l'une d'elles se cache une bière…
+      </p>
+
+      <div class="w-full max-w-xs space-y-5">
+
+        <!-- Nombre de participants -->
+        <div class="bg-white/10 rounded-2xl p-4">
+          <p class="text-gray-400 text-xs uppercase tracking-widest mb-3">
+            Participants
+          </p>
+          <div class="flex items-center justify-between gap-4">
+            <button onclick="adjust('count', -1)"
+              class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20
+                     text-2xl font-black active:scale-90 transition-all flex items-center justify-center">
+              −
+            </button>
+            <span id="count-display"
+                  class="text-5xl font-black tabular-nums text-white w-16 text-center">
+              5
+            </span>
+            <button onclick="adjust('count', +1)"
+              class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20
+                     text-2xl font-black active:scale-90 transition-all flex items-center justify-center">
+              +
+            </button>
+          </div>
+        </div>
+
+        <!-- Nombre de piégés -->
+        <div class="bg-white/10 rounded-2xl p-4">
+          <p class="text-gray-400 text-xs uppercase tracking-widest mb-3">
+            Piégés 🍺
+          </p>
+          <div class="flex items-center justify-between gap-4">
+            <button onclick="adjust('traps', -1)"
+              class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20
+                     text-2xl font-black active:scale-90 transition-all flex items-center justify-center">
+              −
+            </button>
+            <span id="traps-display"
+                  class="text-5xl font-black tabular-nums text-amber-400 w-16 text-center">
+              1
+            </span>
+            <button onclick="adjust('traps', +1)"
+              class="w-12 h-12 rounded-full bg-white/10 hover:bg-white/20
+                     text-2xl font-black active:scale-90 transition-all flex items-center justify-center">
+              +
+            </button>
+          </div>
+        </div>
+
+        <p id="setup-error" class="hidden text-red-400 text-sm text-center"></p>
+
+        <button onclick="startScratch()"
+          class="w-full bg-green-500 hover:bg-green-400 text-white font-black text-xl
+                 py-4 rounded-2xl active:scale-95 transition-all shadow-2xl
+                 ring-4 ring-green-400/30">
+          DISTRIBUER LES TICKETS 🎰
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : JEU
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-game" class="game-section hidden flex flex-col">
+
+    <header class="relative flex items-center justify-between p-4 flex-shrink-0">
+      <a href="./" class="relative z-10 flex items-center gap-1.5 leading-none hover:opacity-75 active:scale-95 transition-all flex-shrink-0">
+        <span class="text-xl leading-none">🎉</span>
+        <span class="font-black text-sm leading-none">EVG <span class="text-yellow-400 evg-nav-name">…</span></span>
+      </a>
+      <h2 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[60%] truncate text-base font-black text-green-400 uppercase tracking-wider">
+        Grattez votre tuile !
+      </h2>
+      <div class="w-8 flex-shrink-0"></div>
+    </header>
+
+    <p class="text-gray-500 text-xs text-center px-4 pb-2">
+      Chacun gratte sa tuile — on découvre le résultat ensemble 👀
+    </p>
+
+    <!-- Grille injectée par JS — scrollable si beaucoup de joueurs -->
+    <div id="scratch-grid"
+         class="flex-1 overflow-y-auto py-4 px-4">
+    </div>
+
+    <div id="game-end-buttons" class="hidden p-4 flex-shrink-0 flex justify-center gap-3">
+      <button onclick="showSection('section-setup')"
+        class="bg-white/10 hover:bg-white/20 text-white font-black
+               px-6 py-3 rounded-xl text-sm active:scale-95 transition-all">
+        ← Paramètres
+      </button>
+      <button onclick="startScratch()"
+        class="bg-green-500 hover:bg-green-400 text-white font-black
+               px-6 py-3 rounded-xl text-sm active:scale-95 transition-all">
+        Rejouer 🔄
+      </button>
+    </div>
+  </div>
+
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script src="scratch.js"></script>
+</body>
+</html>

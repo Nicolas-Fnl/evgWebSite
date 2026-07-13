@@ -1,0 +1,83 @@
+/* style.css — Styles partagés de l'application EVG */
+
+/* ── Animations ──────────────────────────────────────────────── */
+
+@keyframes flashIn {
+  0%   { opacity: 0; transform: scale(0.55) rotate(-4deg); }
+  100% { opacity: 1; transform: scale(1)    rotate(0deg);  }
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0);    }
+}
+
+.flash-in { animation: flashIn 0.18s cubic-bezier(.2, .8, .4, 1) forwards; }
+.fade-up  { animation: fadeUp  0.35s ease-out forwards; }
+
+/* ── Transitions ─────────────────────────────────────────────── */
+
+#quiz-image { transition: opacity 0.25s ease; }
+
+/* ── Séquence Mémo — Flip tiles ──────────────────────────────── */
+
+.memo-tile {
+  perspective: 600px;
+  position: relative;
+}
+
+/* Remplit la tuile via position absolute pour éviter les problèmes
+   de h-full avec aspect-ratio dans certains navigateurs */
+.memo-tile-inner {
+  position: absolute;
+  inset: 0;
+  transform-style: preserve-3d;
+  transition: transform 0.4s ease;
+}
+
+.memo-tile.is-flipped .memo-tile-inner {
+  transform: rotateY(180deg);
+}
+
+.memo-tile-face,
+.memo-tile-back {
+  position: absolute;
+  inset: 0;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.memo-tile-back {
+  transform: rotateY(180deg);
+}
+
+/* ── Sélecteur d'EVG actif (admin uniquement) ──────────────────── */
+
+.evg-admin-select {
+  background: transparent;
+  color: #facc15; /* yellow-400 */
+  font-weight: 900;
+  font-size: 0.875rem;
+  line-height: 1;
+  border: none;
+  border-bottom: 1px dashed rgba(250, 204, 21, .5);
+  padding: 0 2px;
+  cursor: pointer;
+  max-width: 100px;
+}
+.evg-admin-select:focus  { outline: none; }
+.evg-admin-select:disabled { opacity: .5; cursor: default; }
+.evg-admin-select option { background: #1f2937; color: #fff; }
+
+/* ── Corrections générales + prévention scroll/zoom mobile ─────── */
+
+html, body {
+  overflow-x: hidden;
+  overscroll-behavior: none;   /* désactive le pull-to-refresh et le rebond iOS */
+  touch-action: manipulation;  /* désactive le double-tap zoom */
+}

@@ -1,0 +1,17 @@
+{
+  "name": "evgwebsite",
+  "version": "1.0.0",
+  "description": "Application web de mini-jeux pour **EVG** (Enterrement de Vie de Garçon). Déployée sur **GitHub Pages** — aucun serveur, uniquement des fichiers statiques.",
+  "main": "config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "build:css": "tailwindcss -i ./tailwind-src.css -o ./tailwind.css --minify"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "devDependencies": {
+    "tailwindcss": "^3.4.17"
+  }
+}

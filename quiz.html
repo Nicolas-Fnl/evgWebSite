@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>EVG — Quiz</title>
+  <script src="redirect.js"></script>
+  <link rel="stylesheet" href="tailwind.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-900 text-white min-h-screen select-none">
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : MENU — choix du jeu
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-menu" class="game-section relative min-h-screen flex flex-col">
+
+    <header class="flex items-center justify-between p-4 flex-shrink-0">
+      <a href="./" class="flex items-center gap-1.5 leading-none hover:opacity-75 active:scale-95 transition-all">
+        <span class="text-xl leading-none">🎉</span>
+        <span class="font-black text-sm leading-none">EVG <span class="text-yellow-400 evg-nav-name">…</span></span>
+      </a>
+      <div class="w-8"></div>
+    </header>
+
+    <!-- Loader — affiché uniquement si les configs ne sont pas déjà en cache (arrivée directe sur la page) -->
+    <div id="quiz-menu-loader" class="hidden absolute inset-0 flex flex-col items-center justify-center gap-3">
+      <div class="w-10 h-10 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+      <p class="text-gray-500 text-xs animate-pulse">Préparation…</p>
+    </div>
+
+    <div id="quiz-menu-content" class="flex-1 flex flex-col items-center justify-center p-6 gap-5">
+      <h1 class="text-3xl font-black text-yellow-400 mb-2">Choisis ton jeu</h1>
+
+      <button data-feature="quiz" onclick="prepareIntro('quiz')"
+        class="w-full max-w-xs bg-purple-900/60 border-2 border-purple-500/60
+               hover:border-purple-400 rounded-2xl p-5 text-left
+               active:scale-95 transition-all">
+        <div class="text-4xl mb-2">🖼️</div>
+        <p class="font-black text-xl text-purple-300 mb-1">Quiz de la Galerie</p>
+        <p class="text-gray-400 text-sm">Identifie les performers · Choisis ton risque · 5 questions</p>
+      </button>
+
+      <button data-feature="heta" onclick="prepareIntro('heta')"
+        class="w-full max-w-xs bg-red-900/60 border-2 border-red-500/60
+               hover:border-red-400 rounded-2xl p-5 text-left
+               active:scale-95 transition-all">
+        <div class="text-4xl mb-2">🔥</div>
+        <p id="menu-heta-title" class="font-black text-xl text-red-300 mb-1"></p>
+        <p id="menu-heta-subtitle" class="text-gray-400 text-sm"></p>
+      </button>
+
+      <button data-feature="digamma" onclick="prepareIntro('digamma')"
+        class="w-full max-w-xs bg-pink-900/60 border-2 border-pink-500/60
+               hover:border-pink-400 rounded-2xl p-5 text-left
+               active:scale-95 transition-all">
+        <div class="text-4xl mb-2">💦</div>
+        <p id="menu-digamma-title" class="font-black text-xl text-pink-300 mb-1"></p>
+        <p id="menu-digamma-subtitle" class="text-gray-400 text-sm"></p>
+      </button>
+
+      <button data-feature="beta" onclick="showSection('section-special-intro')"
+        class="w-full max-w-xs bg-gray-800 border-2 border-gray-600
+               hover:border-gray-400 rounded-2xl p-5 text-left
+               active:scale-95 transition-all">
+        <div class="text-4xl mb-2">🖤</div>
+        <p id="menu-special-title" class="font-black text-xl text-white mb-1"></p>
+        <p id="menu-special-subtitle" class="text-gray-400 text-sm"></p>
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : INTRO Quiz de la Galerie
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-quiz-intro" class="game-section hidden min-h-screen flex flex-col">
+
+    <header class="flex items-center justify-between p-4 flex-shrink-0">
+      <button onclick="showSection('section-menu')"
+        class="text-gray-400 hover:text-white text-sm font-semibold active:scale-95 transition-all">
+        ← Retour
+      </button>
+      <div class="w-8"></div>
+    </header>
+
+    <div class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+      <div id="quiz-intro-emoji" class="text-6xl mb-4">🖼️</div>
+      <h1 id="quiz-intro-title" class="text-3xl font-black text-yellow-400 mb-2">Quiz de la Galerie</h1>
+      <p class="text-gray-400 mb-6">5 questions · Identifie les performers · Choisis ton risque</p>
+
+      <div class="bg-white/10 rounded-2xl p-5 mb-6 w-full max-w-xs text-left space-y-3">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🎯</span>
+          <div><span class="font-black text-blue-300">DUO</span><span class="text-gray-400 text-sm ml-2">2 choix — 1 pt</span></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🎲</span>
+          <div><span class="font-black text-purple-300">CARRÉ</span><span class="text-gray-400 text-sm ml-2">4 choix — 3 pts</span></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">💰</span>
+          <div><span class="font-black text-yellow-300">CASH</span><span class="text-gray-400 text-sm ml-2">Saisie libre — 5 pts</span></div>
+        </div>
+      </div>
+
+      <p id="loading-msg" class="hidden text-purple-300 text-sm animate-pulse mb-4">Chargement…</p>
+
+      <button id="start-btn"
+              class="bg-purple-600 hover:bg-purple-500 disabled:opacity-50
+                     text-white font-black text-xl px-12 py-4 rounded-2xl
+                     active:scale-95 transition-all shadow-2xl ring-4 ring-purple-500/40">
+        C'EST PARTI ! 🎉
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : QUESTION Quiz de la Galerie
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-question" class="game-section hidden flex flex-col bg-gray-900" style="height:100vh;height:100dvh">
+
+    <!-- En-tête + barre de progression -->
+    <div class="flex-shrink-0 px-4 pt-4 pb-2">
+      <header class="flex items-center justify-between mb-2">
+        <div class="w-8"></div>
+        <div class="text-center">
+          <p id="quiz-progress" class="text-yellow-400 font-bold text-sm">Question 1/5</p>
+          <p class="text-gray-500 text-xs">
+            Score : <span id="quiz-score-display" class="text-white font-bold">0</span> pts
+          </p>
+        </div>
+        <div class="w-8"></div>
+      </header>
+      <div class="w-full bg-gray-800 rounded-full h-1.5">
+        <div id="quiz-progress-bar"
+             class="bg-yellow-400 h-1.5 rounded-full transition-all duration-500"
+             style="width: 0%"></div>
+      </div>
+    </div>
+
+    <!-- Image -->
+    <div class="flex-1 min-h-0 px-3 py-2 relative flex items-center justify-center">
+      <img id="quiz-image" src="" alt="Qui est-ce ?"
+           class="max-w-full rounded-2xl opacity-0 block"
+           style="max-height:100%" />
+      <div id="quiz-image-loader"
+           class="absolute inset-0 flex items-center justify-center text-gray-500 text-sm">
+        <span class="animate-spin text-2xl">⏳</span>
+      </div>
+    </div>
+
+    <!-- Contrôles bas -->
+    <div class="flex-shrink-0 px-4 pb-4 pt-2">
+      <p class="text-center text-gray-300 font-semibold mb-3 text-sm">Qui est-ce ?</p>
+
+      <!-- Conteneur relatif : risk selector maintient la hauteur, answer area en overlay -->
+      <div class="relative max-w-sm mx-auto w-full">
+
+        <!-- Sélecteur de risque — toujours dans le flux pour fixer la hauteur -->
+        <div id="quiz-risk-selector">
+          <p class="text-center text-gray-500 text-xs uppercase tracking-widest mb-2">Choisis ton risque</p>
+          <div class="grid grid-cols-3 gap-2">
+            <button onclick="selectRisk('duo')"
+              class="flex flex-col items-center bg-blue-900/40 border border-blue-500/40
+                     hover:bg-blue-700/40 rounded-xl py-3 px-2 transition-all active:scale-95">
+              <span class="text-2xl">🎯</span>
+              <span class="font-black text-sm mt-1">DUO</span>
+              <span class="text-blue-300 text-xs">1 pt</span>
+            </button>
+            <button onclick="selectRisk('carre')"
+              class="flex flex-col items-center bg-purple-900/40 border border-purple-500/40
+                     hover:bg-purple-700/40 rounded-xl py-3 px-2 transition-all active:scale-95">
+              <span class="text-2xl">🎲</span>
+              <span class="font-black text-sm mt-1">CARRÉ</span>
+              <span class="text-purple-300 text-xs">3 pts</span>
+            </button>
+            <button onclick="selectRisk('cash')"
+              class="flex flex-col items-center bg-yellow-900/40 border border-yellow-500/40
+                     hover:bg-yellow-700/40 rounded-xl py-3 px-2 transition-all active:scale-95">
+              <span class="text-2xl">💰</span>
+              <span class="font-black text-sm mt-1">CASH</span>
+              <span class="text-yellow-300 text-xs">5 pts</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Zone de réponse — overlay absolu, même espace que le risk selector -->
+        <div id="quiz-answer-area" class="hidden absolute inset-0 flex flex-col justify-center">
+          <div id="quiz-buttons" class="hidden grid grid-cols-2 gap-3"></div>
+          <div id="quiz-cash-area" class="hidden">
+            <input id="cash-input" type="text" placeholder="Tape son prénom…"
+                   autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"
+                   class="w-full bg-gray-800 border border-gray-600 rounded-xl px-4 py-3
+                          text-white text-lg focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-3" />
+            <button onclick="submitCash()"
+              class="w-full bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-black text-lg
+                     py-3 rounded-xl transition-all active:scale-95">
+              VALIDER 💰
+            </button>
+          </div>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- Overlay de feedback -->
+    <div id="quiz-feedback"
+         class="hidden fixed inset-0 z-50 bg-gray-900/95 backdrop-blur-sm
+                flex flex-col items-center justify-center p-6 text-center">
+      <div id="qf-icon"    class="text-8xl mb-4"></div>
+      <p   id="qf-verdict" class="text-3xl font-black mb-2"></p>
+      <p   id="qf-name"    class="text-white text-xl font-black mb-1"></p>
+      <p   id="qf-points"  class="text-yellow-400 text-xl font-bold mb-8"></p>
+      <button onclick="nextQuestion()"
+        class="bg-white text-gray-900 font-black text-lg px-10 py-3
+               rounded-xl active:scale-95 transition-all">
+        SUIVANT →
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : INTRO Mini-jeu bonus
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-special-intro" class="game-section hidden min-h-screen flex flex-col">
+
+    <header class="flex items-center justify-between p-4 flex-shrink-0">
+      <button onclick="showSection('section-menu')"
+        class="text-gray-400 hover:text-white text-sm font-semibold active:scale-95 transition-all">
+        ← Retour
+      </button>
+      <div class="w-8"></div>
+    </header>
+
+    <div class="flex-1 flex flex-col items-center justify-center p-6 text-center">
+      <div class="text-6xl mb-4">🖤</div>
+      <h1 id="special-intro-title" class="text-3xl font-black text-white mb-2"></h1>
+      <p id="special-intro-subtitle" class="text-gray-400 mb-6"></p>
+
+      <div class="bg-white/10 rounded-2xl p-5 mb-6 w-full max-w-xs text-left space-y-3">
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🖤</span>
+          <div><span id="special-rule-yes-label" class="font-black text-white"></span><span id="special-rule-yes-desc" class="text-gray-400 text-sm ml-2"></span></div>
+        </div>
+        <div class="flex items-center gap-3">
+          <span class="text-2xl">🤍</span>
+          <div><span class="font-black text-gray-300">NOT YET</span><span class="text-gray-400 text-sm ml-2">Pas encore…</span></div>
+        </div>
+        <div class="border-t border-white/10 pt-3 text-gray-400 text-sm">
+          La série s'arrête à la première erreur.<br/>
+          Score = nombre de bonnes réponses d'affilée.
+        </div>
+      </div>
+
+      <button onclick="startSpecialGame()"
+              class="bg-gray-800 hover:bg-gray-700 border-2 border-gray-500 hover:border-white
+                     text-white font-black text-xl px-12 py-4 rounded-2xl
+                     active:scale-95 transition-all shadow-2xl">
+        C'EST PARTI ! 🖤
+      </button>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : JEU Mini-jeu bonus
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-special" class="game-section hidden flex flex-col bg-gray-900" style="height:100vh;height:100dvh">
+
+    <header class="flex-shrink-0 flex items-center justify-between px-4 pt-4 pb-2">
+      <div class="w-10"></div>
+      <div class="text-center">
+        <p id="special-game-title" class="text-white font-black text-sm tracking-widest"></p>
+        <p class="text-gray-400 text-xs mt-0.5">
+          Série : <span id="special-streak-display" class="text-yellow-400 font-black">0</span>
+        </p>
+      </div>
+      <div class="w-10"></div>
+    </header>
+
+    <!-- Image — remplit tout l'espace disponible -->
+    <div class="flex-1 min-h-0 px-3 py-2 relative flex items-center justify-center">
+      <img id="special-image" src="" alt=""
+           class="max-w-full rounded-2xl opacity-0 transition-opacity duration-300 block"
+           style="max-height:100%" />
+      <div id="special-loader"
+           class="absolute inset-0 flex items-center justify-center text-gray-500">
+        <span class="animate-spin text-3xl">⏳</span>
+      </div>
+    </div>
+
+    <!-- Boutons réponse -->
+    <div id="special-buttons" class="flex-shrink-0 grid grid-cols-2 gap-4 px-4 pb-5 pt-3 mx-auto w-full"
+         style="max-width: 460px">
+      <button onclick="submitSpecialAnswer(true)"
+        class="bg-gray-950 border-2 border-gray-600 hover:border-white
+               text-white font-black text-lg py-5 rounded-2xl
+               active:scale-95 transition-all flex flex-col items-center gap-1">
+        <span class="text-3xl">🖤</span>
+        <span id="special-answer-yes-label"></span>
+      </button>
+      <button onclick="submitSpecialAnswer(false)"
+        class="bg-gray-950 border-2 border-gray-600 hover:border-white
+               text-white font-black text-lg py-5 rounded-2xl
+               active:scale-95 transition-all flex flex-col items-center gap-1">
+        <span class="text-3xl">🤍</span>
+        <span>NOT YET</span>
+      </button>
+    </div>
+
+    <!-- Overlay feedback -->
+    <div id="special-feedback" class="hidden fixed inset-0 z-50 bg-gray-900/95 backdrop-blur-sm flex flex-col">
+
+      <!-- MODE : image de révélation dispo — même layout que la question -->
+      <div id="sp-with-image" class="hidden flex flex-col" style="height:100vh;height:100dvh">
+
+        <!-- Titre + série -->
+        <div class="flex-shrink-0 flex items-center justify-between px-4 pt-4 pb-2">
+          <div class="w-10"></div>
+          <div class="text-center">
+            <p id="sp-game-title" class="text-white font-black text-sm tracking-widest"></p>
+            <p class="text-xs mt-0.5" id="sp-streak-line"></p>
+          </div>
+          <div class="w-10"></div>
+        </div>
+
+        <!-- Image — mêmes dimensions que pendant la question -->
+        <div class="flex-1 min-h-0 px-3 py-2 flex items-center justify-center">
+          <img id="sp-reveal-img" src="" alt=""
+               class="max-w-full rounded-2xl block"
+               style="max-height:100%" />
+        </div>
+
+        <!-- Verdict + nom + bouton -->
+        <div class="flex-shrink-0 flex flex-col items-center text-center px-6 pb-5 pt-3">
+          <p id="sp-verdict-img" class="text-3xl font-black mb-2"></p>
+          <p id="sp-name-img"    class="text-white text-xl font-black mb-6"></p>
+          <button id="sp-action-img"
+            class="bg-white text-gray-900 font-black text-lg px-10 py-3
+                   rounded-xl active:scale-95 transition-all w-full max-w-xs">
+            SUIVANT →
+          </button>
+        </div>
+      </div>
+
+      <!-- MODE : pas d'image — centré (aligné sur quiz-feedback) -->
+      <div id="sp-no-image"
+           class="hidden flex-1 flex flex-col items-center justify-center text-center p-6">
+        <div id="sp-icon"         class="text-8xl mb-4"></div>
+        <p   id="sp-verdict"      class="text-3xl font-black mb-2"></p>
+        <p   id="sp-name"         class="text-white text-xl font-black mb-1"></p>
+        <p   id="sp-streak-label" class="text-yellow-400 text-xl font-bold mb-8"></p>
+        <button id="sp-action-btn"
+          class="bg-white text-gray-900 font-black text-lg px-10 py-3
+                 rounded-xl active:scale-95 transition-all w-full max-w-xs">
+          SUIVANT →
+        </button>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ══════════════════════════════════════════════════════════════
+       SECTION : RÉSULTAT (partagée)
+  ═══════════════════════════════════════════════════════════════ -->
+  <div id="section-result"
+       class="game-section hidden min-h-screen flex flex-col items-center justify-center
+              bg-gray-900 p-6 text-center">
+
+    <div id="qr-emoji" class="text-8xl mb-4">🏆</div>
+    <h2 id="qr-title" class="text-3xl font-black text-yellow-400 mb-4">Partie terminée !</h2>
+
+    <div class="bg-white/10 rounded-2xl p-6 mb-5 w-full max-w-xs">
+      <p id="qr-score-label" class="text-gray-400 text-sm mb-1">Score final</p>
+      <p class="flex items-baseline justify-center gap-2">
+        <span id="qr-score" class="text-6xl font-black text-white">0</span>
+        <span id="qr-max" class="text-gray-500 text-sm">/25 pts</span>
+      </p>
+    </div>
+
+    <div class="w-full max-w-xs mb-5">
+      <input id="qr-save-name" type="text" placeholder="Signe ton score"
+             oninput="_onResultNameInput()"
+             autocomplete="off" autocorrect="off" autocapitalize="words"
+             class="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3
+                    text-white placeholder-gray-500 text-lg
+                    focus:outline-none focus:ring-2 focus:ring-yellow-400 mb-3" />
+      <button id="qr-newgame-btn" onclick="saveAndRestartQuiz()" disabled
+        class="w-full bg-green-500 hover:bg-green-400 disabled:opacity-40
+               text-gray-900 font-black text-lg py-3 rounded-xl
+               active:scale-95 transition-all">
+        NOUVELLE PARTIE 🔁
+      </button>
+      <p id="qr-save-status" class="hidden mt-2 text-sm text-center font-semibold"></p>
+    </div>
+
+    <button id="qr-back-btn" onclick="saveAndGoToMenu()" disabled
+       class="w-full max-w-xs bg-yellow-400 hover:bg-yellow-300 disabled:opacity-40
+              text-gray-900 font-black text-lg py-3 rounded-xl
+              active:scale-95 transition-all">
+      ← Retour aux jeux
+    </button>
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script src="quiz.js"></script>
+  <script>
+    document.addEventListener('DOMContentLoaded', async () => {
+      document.getElementById('cash-input').addEventListener('keydown', (e) => {
+        if (e.key === 'Enter') submitCash();
+      });
+      document.getElementById('start-btn').addEventListener('click', startQuiz);
+
+      const menuContent = document.getElementById('quiz-menu-content');
+      const menuLoader   = document.getElementById('quiz-menu-loader');
+
+      // Affiche le loader tant que les textes d'interface et/ou les configs
+      // ne sont pas encore en cache (arrivée directe sur la page) — sinon
+      // le contenu apparaît immédiatement.
+      const needsLoader = !getCachedUIStrings() || (!isAdmin() && !getCachedConfigs());
+      if (needsLoader) {
+        menuContent.classList.add('invisible');
+        menuLoader.classList.remove('hidden');
+      }
+
+      // Chaînes d'interface des catégories sensibles — chiffrées (voir
+      // DEVELOPER.md § Sécurité), déchiffrées via le decryptionToken.
+      try {
+        applyUIStrings(await getUIStrings());
+      } catch (err) {
+        console.warn('[STRINGS] Échec du chargement des textes :', err);
+      }
+
+      // Masque les sous-catégories désactivées pour cet EVG (voir
+      // data-feature ci-dessus). L'admin voit toujours tout. On réutilise en priorité le cache
+      // rempli par index.html — pas de second appel réseau dans le cas
+      // courant (arrivée depuis le dashboard).
+      if (!isAdmin()) {
+        let configs = getCachedConfigs();
+        if (!configs) {
+          try {
+            const res = await getConfigs(getEvgName());
+            if (res.status === 'ok' && res.configs) {
+              configs = res.configs;
+              setCachedConfigs(configs);
+            }
+          } catch (err) {
+            console.warn('[CONFIGS] Échec du chargement des accès :', err);
+          }
+        }
+        if (configs) applyFeatureConfigs(configs);
+      }
+
+      if (needsLoader) {
+        menuLoader.classList.add('hidden');
+        menuContent.classList.remove('invisible');
+      }
+    });
+  </script>
+</body>
+</html>

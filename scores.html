@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>EVG — Classement</title>
+  <script src="redirect.js"></script>
+  <link rel="stylesheet" href="tailwind.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-900 text-white min-h-screen select-none">
+
+  <div class="min-h-screen flex flex-col p-5">
+
+    <!-- Header — pleine largeur, comme les autres pages -->
+    <header class="relative flex items-center justify-between mb-6 flex-shrink-0">
+      <a href="./" class="relative z-10 flex items-center gap-1.5 leading-none hover:opacity-75 active:scale-95 transition-all flex-shrink-0">
+        <span class="text-xl leading-none">🎉</span>
+        <span class="font-black text-sm leading-none">EVG <span class="text-yellow-400 evg-nav-name">…</span></span>
+      </a>
+      <div class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[60%] text-center">
+        <h1 class="text-lg font-black text-yellow-400 uppercase tracking-wider truncate">🏆 Classement</h1>
+        <p id="scores-evg-label" class="text-gray-500 text-xs truncate"></p>
+      </div>
+      <button id="refresh-btn" onclick="loadAllScores()"
+        class="relative z-10 text-gray-400 hover:text-white text-xl px-1 transition-all active:scale-90 flex-shrink-0">
+        🔄
+      </button>
+    </header>
+
+    <!-- Contenu — largeur limitée et centré, comme le "main" des autres pages -->
+    <div class="w-full max-w-md mx-auto flex-1 flex flex-col min-h-0">
+
+      <!-- Tabs -->
+      <div class="flex gap-2 mb-5 flex-shrink-0">
+        <button id="tab-quiz"   onclick="switchTab('quiz-galerie')"
+          class="flex-1 py-2 rounded-xl font-black text-sm transition-all">
+          🖼️ Quiz
+        </button>
+        <button id="tab-memo" data-feature="flash" onclick="switchTab('sequence-memo')"
+          class="flex-1 py-2 rounded-xl font-black text-sm transition-all">
+          🧠 Séquence
+        </button>
+        <button id="tab-parts"  onclick="switchTab('participations')"
+          class="flex-1 py-2 rounded-xl font-black text-sm transition-all">
+          👥 Parties
+        </button>
+      </div>
+
+      <!-- Contenu -->
+      <div id="scores-content" class="flex-1"></div>
+
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script>
+    let currentTab     = 'quiz-galerie';
+    let rawData        = [];   // tableau brut renvoyé par l'API
+    let currentConfigs = null; // configs de l'EVG courant — masque les jeux désactivés
+
+    // ── Init ──────────────────────────────────────────────────────
+    document.addEventListener('DOMContentLoaded', async () => {
+      const host = getEvgHost();
+      document.getElementById('scores-evg-label').textContent =
+        host ? `EVG de ${host}` : 'Tous les scores';
+      if (!host) {
+        document.querySelectorAll('.evg-nav-name').forEach(el => { el.textContent = '?'; });
+      }
+      updateTabStyles();
+      await loadScoreGating();
+      applyTabGating();
+      updateTabStyles();
+      loadAllScores();
+    });
+
+    // ── Masquage des onglets ──────────────────────────────────────
+    // "Parties" est réservé aux admins (pas une fonctionnalité par EVG,
+    // donc pas géré via data-feature/applyFeatureConfigs). "Quiz" ne
+    // s'affiche que si au moins une des 4 variantes est activée pour cet
+    // EVG. "Séquence" utilise déjà data-feature="flash" (applyFeatureConfigs,
+    // appliqué ici pour que le fallback ci-dessous voie son état à jour).
+    function applyTabGating() {
+      if (currentConfigs) applyFeatureConfigs(currentConfigs);
+
+      document.getElementById('tab-parts').classList.toggle('hidden', !isAdmin());
+
+      if (!isAdmin()) {
+        const cfg = currentConfigs || {};
+        const anyQuiz = ['quiz', 'heta', 'digamma', 'beta'].some((k) => cfg[k] !== false);
+        document.getElementById('tab-quiz').classList.toggle('hidden', !anyQuiz);
+      }
+
+      // Si l'onglet actif vient d'être masqué, bascule sur le premier onglet visible.
+      const tabForKey = { 'quiz-galerie': 'tab-quiz', 'sequence-memo': 'tab-memo', participations: 'tab-parts' };
+      const activeBtn = document.getElementById(tabForKey[currentTab]);
+      if (activeBtn && activeBtn.classList.contains('hidden')) {
+        const fallback = Object.keys(tabForKey).find(
+          (key) => !document.getElementById(tabForKey[key]).classList.contains('hidden')
+        );
+        if (fallback) currentTab = fallback;
+      }
+    }
+
+    // ── Masquage des jeux désactivés ──────────────────────────────
+    // Réutilise le cache posé par index.html — pas d'appel réseau si
+    // l'utilisateur arrive depuis le dashboard. Page publique : si
+    // l'identité de l'EVG est inconnue (visite anonyme), on ne restreint
+    // rien (fail-open), tout comme si le chargement échoue.
+    async function loadScoreGating() {
+      if (isAdmin()) return;
+
+      currentConfigs = getCachedConfigs();
+      if (currentConfigs) return;
+
+      const evgName = getEvgName();
+      if (!evgName) return;
+
+      try {
+        const res = await getConfigs(evgName);
+        if (res.status === 'ok' && res.configs) {
+          currentConfigs = res.configs;
+          setCachedConfigs(currentConfigs);
+        }
+      } catch (err) {
+        console.warn('[CONFIGS] Échec du chargement des accès :', err);
+      }
+    }
+
+    // ── Chargement ────────────────────────────────────────────────
+    async function loadAllScores() {
+      setLoading(true);
+      try {
+        const res = await getAllScores();
+        rawData = (res.status === 'success' && Array.isArray(res.data)) ? res.data : [];
+      } catch (err) {
+        console.error('[SCORES] Erreur :', err);
+        rawData = [];
+      }
+      setLoading(false);
+      renderTab(currentTab);
+    }
+
+    function setLoading(on) {
+      if (on) {
+        document.getElementById('scores-content').innerHTML = `
+          <div class="flex items-center justify-center h-40">
+            <span class="text-gray-500 text-sm animate-pulse">Chargement…</span>
+          </div>`;
+      }
+      const btn = document.getElementById('refresh-btn');
+      btn.style.opacity = on ? '0.4' : '1';
+      btn.disabled = on;
+    }
+
+    // ── Normalisation du nom de jeu ───────────────────────────────
+    // Attention à l'ordre : "heta-quiz" et "quiz-digamma" contiennent tous
+    // les deux la sous-chaîne "quiz", donc les tests spécifiques doivent
+    // passer avant le test générique `includes('quiz')`.
+    // Reconnaît aussi les anciennes valeurs ('blacked'/'hot'/'facial') pour
+    // que les scores historiques enregistrés avant le renommage du schéma
+    // (2026-07-13) continuent de s'agréger correctement.
+    function normalizeJeu(jeu) {
+      const j = (jeu || '').toLowerCase().trim();
+      if (j.includes('blacked') || j.includes('beta'))                       return 'beta-streak';
+      if (j.includes('hot')     || j.includes('heta'))                       return 'heta-quiz';
+      if (j.includes('facial')  || j.includes('digamma'))                    return 'quiz-digamma';
+      if (j === 'quiz' || j.includes('quiz'))                                return 'quiz-galerie';
+      if (j.includes('memo') || j.includes('sequence') || j.includes('séquence')) return 'sequence-memo';
+      return j;
+    }
+
+    // ── Meilleur score par joueur pour un jeu ────────────────────
+    // Quiz   : plus grand score = mieux → tri décroissant
+    // Séquence : plus petit score = mieux → tri croissant
+    function bestScores(jeu) {
+      const isMemo = jeu === 'sequence-memo';
+      const byPlayer = {};
+      rawData.forEach(e => {
+        if (normalizeJeu(e.jeu) !== jeu) return;
+        const name = e['prénom'] || e.prenom || '?';
+        const s    = Number(e.score);
+        if (isNaN(s)) return;
+        const cur = byPlayer[name];
+        if (cur === undefined || (isMemo ? s < cur : s > cur)) {
+          byPlayer[name] = s;
+        }
+      });
+      const entries = Object.entries(byPlayer).map(([prenom, score]) => ({ prenom, score }));
+      return entries.sort((a, b) => isMemo ? a.score - b.score : b.score - a.score);
+    }
+
+    // ── Participations (couple prénom+ip) par jeu ────────────────
+    // Chaque couple unique (prénom, ip) = un joueur distinct.
+    // On compte combien de parties il a jouées pour chaque jeu.
+    function participations() {
+      const players = {};
+      rawData.forEach(e => {
+        const name = e['prénom'] || e.prenom || '?';
+        const ip   = e.ip || '';
+        const key  = `${name}|${ip}`;
+        if (!players[key]) players[key] = { prenom: name, quiz: 0, heta: 0, digamma: 0, beta: 0, memo: 0 };
+        const jeu = normalizeJeu(e.jeu);
+        if (jeu === 'quiz-galerie')  players[key].quiz++;
+        if (jeu === 'heta-quiz')     players[key].heta++;
+        if (jeu === 'quiz-digamma')  players[key].digamma++;
+        if (jeu === 'beta-streak')   players[key].beta++;
+        if (jeu === 'sequence-memo') players[key].memo++;
+      });
+      return Object.values(players)
+        .sort((a, b) =>
+          (b.quiz + b.heta + b.digamma + b.beta + b.memo) -
+          (a.quiz + a.heta + a.digamma + a.beta + a.memo));
+    }
+
+    // ── Tabs ──────────────────────────────────────────────────────
+    function switchTab(tab) {
+      currentTab = tab;
+      updateTabStyles();
+      renderTab(tab);
+    }
+
+    // N'utilise que classList.add/remove sur les classes de couleur (pas un
+    // remplacement complet de className) pour ne jamais effacer la classe
+    // "hidden" posée par applyTabGating() sur un onglet désactivé.
+    function updateTabStyles() {
+      const map = {
+        'quiz-galerie':   'tab-quiz',
+        'sequence-memo':  'tab-memo',
+        'participations': 'tab-parts',
+      };
+      const activeClasses   = ['bg-yellow-400', 'text-gray-900'];
+      const inactiveClasses = ['bg-white/10', 'text-gray-300'];
+      Object.entries(map).forEach(([key, id]) => {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.remove(...activeClasses, ...inactiveClasses);
+        el.classList.add(...(key === currentTab ? activeClasses : inactiveClasses));
+      });
+    }
+
+    // ── Rendu ─────────────────────────────────────────────────────
+    function renderTab(tab) {
+      updateTabStyles();
+      const content = document.getElementById('scores-content');
+
+      if (tab === 'participations') {
+        renderParticipations(content);
+      } else {
+        renderLeaderboard(content, tab);
+      }
+
+      // Masque les jeux désactivés pour cet EVG (sections + onglet Séquence).
+      if (currentConfigs) applyFeatureConfigs(currentConfigs);
+    }
+
+    function renderLeaderboard(content, jeu) {
+      if (jeu === 'quiz-galerie') {
+        content.innerHTML = renderLeaderboardSection('quiz-galerie', '❓ Quiz', 'pts', 'quiz') +
+                            renderLeaderboardSection('heta-quiz',    '🔥 Quiz Hot', 'pts', 'heta') +
+                            renderLeaderboardSection('quiz-digamma', '💦 Quiz Facial', 'pts', 'digamma') +
+                            renderLeaderboardSection('beta-streak',  '🖤 Has she been blacked?', 'streak', 'beta');
+        return;
+      }
+      content.innerHTML = renderLeaderboardSection(
+        jeu, '', jeu === 'sequence-memo' ? 'memo' : 'pts',
+        jeu === 'sequence-memo' ? 'flash' : undefined
+      );
+    }
+
+    function renderLeaderboardSection(jeu, title, kind, featureKey) {
+      const isMemo   = kind === 'memo';
+      const isStreak = kind === 'streak';
+      const scores   = bestScores(jeu);
+
+      const medals = ['🥇', '🥈', '🥉'];
+
+      let rows = '';
+      if (scores.length === 0) {
+        rows = `<p class="text-gray-600 text-sm text-center py-4">Aucun score enregistré</p>`;
+      } else {
+        rows = scores.map((e, i) => {
+          const rank     = medals[i] || `${i + 1}.`;
+          const scoreStr = isMemo
+            ? deciToTime(e.score)
+            : isStreak
+              ? `${e.score} 🔥`
+              : `${e.score} pts`;
+          const isTop = i < 3;
+          return `
+            <div class="flex items-center gap-3 px-4 py-3 rounded-xl mb-2
+                        ${isTop ? 'bg-white/10' : 'bg-white/5'}">
+              <span class="text-2xl w-8 text-center flex-shrink-0">${rank}</span>
+              <span class="font-black flex-1 truncate ${isTop ? 'text-white' : 'text-gray-300'}">
+                ${escapeHtml(e.prenom)}
+              </span>
+              <span class="font-black text-yellow-400 flex-shrink-0 tabular-nums">${scoreStr}</span>
+            </div>`;
+        }).join('');
+      }
+
+      const hint = isMemo
+        ? '<span class="text-gray-500 text-xs">⬇️ moins de temps = mieux</span>'
+        : '<span class="text-gray-500 text-xs">⬆️ plus de points = mieux</span>';
+
+      const titleHtml = title
+        ? `<p class="font-black text-white text-sm mb-1">${title}</p>` : '';
+
+      return `
+        <div class="mb-6"${featureKey ? ` data-feature="${featureKey}"` : ''}>
+          <div class="flex items-center justify-between mb-3">
+            ${titleHtml}
+            <span>${hint}</span>
+          </div>
+          ${rows}
+        </div>`;
+    }
+
+    function renderParticipations(content) {
+      const parts = participations();
+
+      if (parts.length === 0) {
+        content.innerHTML = emptyState();
+        return;
+      }
+
+      const header = `
+        <div class="flex items-center gap-2 px-4 py-2 mb-2 text-xs font-black text-gray-400 uppercase tracking-wider">
+          <span class="flex-1">Joueur</span>
+          <span class="w-12 text-center" data-feature="quiz">❓</span>
+          <span class="w-12 text-center" data-feature="heta">🔥</span>
+          <span class="w-12 text-center" data-feature="digamma">💦</span>
+          <span class="w-12 text-center" data-feature="beta">🖤</span>
+          <span class="w-12 text-center" data-feature="flash">🧠</span>
+        </div>`;
+
+      const rows = parts.map((p, i) => {
+        const isTop = i < 3;
+        const cell = (n, featureKey) => `
+            <span class="w-12 text-center tabular-nums font-black ${n > 0 ? 'text-yellow-400' : 'text-gray-600'}" data-feature="${featureKey}">
+              ${n > 0 ? n + '×' : '—'}
+            </span>`;
+        return `
+          <div class="flex items-center gap-2 px-4 py-3 rounded-xl mb-2
+                      ${isTop ? 'bg-white/10' : 'bg-white/5'}">
+            <span class="font-black flex-1 truncate ${isTop ? 'text-white' : 'text-gray-300'}">
+              ${escapeHtml(p.prenom)}
+            </span>
+            ${cell(p.quiz, 'quiz')}
+            ${cell(p.heta, 'heta')}
+            ${cell(p.digamma, 'digamma')}
+            ${cell(p.beta, 'beta')}
+            ${cell(p.memo, 'flash')}
+          </div>`;
+      }).join('');
+
+      content.innerHTML = `
+        <div class="mb-2 text-center text-gray-500 text-xs">Nombre de parties jouées par joueur</div>
+        ${header}${rows}`;
+    }
+
+    // ── Utilitaires ───────────────────────────────────────────────
+    function emptyState() {
+      return `
+        <div class="flex flex-col items-center justify-center h-40 text-center">
+          <span class="text-4xl mb-3">🏜️</span>
+          <span class="text-gray-500 text-sm">Aucun score enregistré</span>
+        </div>`;
+    }
+
+    function deciToTime(deci) {
+      const s = deci / 10;
+      if (s < 60) return s.toFixed(1) + ' s';
+      const m   = Math.floor(s / 60);
+      const rem = (s % 60).toFixed(1).padStart(4, '0');
+      return `${m}:${rem} min`;
+    }
+
+  </script>
+</body>
+</html>
