@@ -8,7 +8,7 @@
  *
  * Dépendances (à charger avant ce fichier) :
  *   - config.js
- *   - script.js  (shuffle, preloadImages, saveScore, getLastPlayer)
+ *   - script.js  (shuffle, preloadImages, saveScore, getLastPlayer, showSection)
  */
 
 // ── État de la partie ─────────────────────────────────────────────
@@ -344,6 +344,26 @@ function memoStop() {
   setTimeout(isLast ? _endGame : () => _showInterRound(elapsed), 250);
 }
 
+// Barre espace = même action que le bouton "J'AI DIT !" pendant le chrono, ou
+// que "Manche suivante →" sur l'écran inter-manche — ne préventDefault (et
+// n'agit) que dans ces deux cas précis, pour ne jamais bloquer une saisie
+// clavier normale (ex: espace dans le champ pseudo du résultat).
+document.addEventListener('keydown', (e) => {
+  if (!(e.code === 'Space' || e.key === ' ')) return;
+
+  if (mPhase === 'timing') {
+    e.preventDefault();
+    memoStop();
+    return;
+  }
+
+  const interSection = document.getElementById('section-inter');
+  if (interSection && !interSection.classList.contains('hidden')) {
+    e.preventDefault();
+    nextRound();
+  }
+});
+
 function _showInterRound(ms) {
   document.getElementById('inter-round-label').textContent =
     `Manche ${mRound + 1} terminée !`;
@@ -436,11 +456,6 @@ function memoAbort() {
 
 
 // ── Helpers UI ────────────────────────────────────────────────────
-
-function showSection(id) {
-  document.querySelectorAll('.game-section').forEach((s) => s.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-}
 
 function _updateRoundLabel() {
   document.getElementById('memo-round-label').textContent =

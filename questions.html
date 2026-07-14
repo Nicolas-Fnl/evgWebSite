@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>EVG — Questions</title>
+  <script src="redirect.js"></script>
+  <link rel="stylesheet" href="tailwind.css" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body class="bg-gray-900 text-white min-h-screen select-none">
+
+  <div class="min-h-screen flex flex-col p-5">
+
+    <!-- Header — pleine largeur, comme les autres pages -->
+    <header class="relative flex items-center justify-between mb-6 flex-shrink-0">
+      <a href="./" class="relative z-10 flex items-center gap-1.5 leading-none hover:opacity-75 active:scale-95 transition-all flex-shrink-0">
+        <span class="text-xl leading-none">🎉</span>
+        <span class="font-black text-sm leading-none">EVG <span class="text-yellow-400 evg-nav-name">…</span></span>
+      </a>
+      <h1 class="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 max-w-[60%] truncate text-lg font-black text-yellow-400 uppercase tracking-wider">
+        ❓ Questions
+      </h1>
+      <div class="w-8 flex-shrink-0"></div>
+    </header>
+
+    <!-- Contenu — largeur limitée et centré, comme le "main" des autres pages -->
+    <div class="w-full max-w-md mx-auto flex-1 flex flex-col">
+
+      <!-- Chargement -->
+      <div id="state-loading" class="flex-1 flex flex-col items-center justify-center gap-3">
+        <div class="w-10 h-10 border-4 border-yellow-400 border-t-transparent rounded-full animate-spin"></div>
+        <p class="text-gray-500 text-xs animate-pulse">Chargement des questions…</p>
+      </div>
+
+      <!-- Erreur -->
+      <div id="state-error" class="hidden flex-1 flex flex-col items-center justify-center gap-3 text-center px-4">
+        <span class="text-4xl">⚠️</span>
+        <p id="error-message" class="text-red-400 text-sm"></p>
+        <button onclick="loadQuestions()"
+          class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-black text-sm px-5 py-2.5
+                 rounded-xl active:scale-95 transition-all">
+          Réessayer
+        </button>
+      </div>
+
+      <!-- Une question à la fois -->
+      <div id="state-question" class="hidden flex-1 flex flex-col">
+        <p id="progress-label" class="text-yellow-400 font-bold text-sm text-center mb-2"></p>
+        <div class="w-full bg-gray-800 rounded-full h-1.5 mb-4 flex-shrink-0">
+          <div id="progress-bar"
+               class="bg-yellow-400 h-1.5 rounded-full transition-all duration-500"
+               style="width: 0%"></div>
+        </div>
+
+        <div id="question-card" class="bg-white/5 rounded-2xl p-5 flex-1 flex flex-col border-2 border-transparent">
+          <p id="question-text" class="font-black text-white text-lg mb-4"></p>
+          <div id="question-body" class="flex-1"></div>
+          <div id="question-feedback" class="hidden mt-4 items-center gap-3">
+            <span id="feedback-icon" class="text-4xl leading-none"></span>
+            <p id="feedback-text" class="text-base font-black"></p>
+          </div>
+        </div>
+
+        <button id="validate-btn" onclick="validateCurrent()"
+          class="w-full bg-yellow-400 hover:bg-yellow-300 disabled:opacity-50
+                 text-gray-900 font-black text-lg py-4 rounded-2xl
+                 active:scale-95 transition-all shadow-2xl mt-4 flex-shrink-0">
+          Valider
+        </button>
+
+        <button id="next-btn" onclick="nextQuestion()"
+          class="hidden w-full bg-white text-gray-900 font-black text-lg py-4 rounded-2xl
+                 active:scale-95 transition-all shadow-2xl mt-4 flex-shrink-0">
+          Suivant →
+        </button>
+      </div>
+
+      <!-- Résultat -->
+      <div id="state-summary" class="hidden flex-1 flex flex-col items-center justify-center text-center gap-3">
+        <span id="summary-emoji" class="text-6xl"></span>
+        <p id="summary-score" class="text-2xl font-black text-yellow-400"></p>
+        <div class="flex gap-3 mt-2">
+          <a href="./"
+            class="bg-yellow-400 hover:bg-yellow-300 text-gray-900 font-black text-sm px-5 py-2.5
+                   rounded-xl active:scale-95 transition-all no-underline">
+            ← Retour aux jeux
+          </a>
+          <button onclick="loadQuestions()"
+            class="bg-green-500 hover:bg-green-400 text-white font-black text-sm px-5 py-2.5
+                   rounded-xl active:scale-95 transition-all">
+            🔁 Recommencer
+          </button>
+        </div>
+      </div>
+
+    </div>
+
+  </div>
+
+  <script src="config.js"></script>
+  <script src="script.js"></script>
+  <script src="questions.js"></script>
+</body>
+</html>

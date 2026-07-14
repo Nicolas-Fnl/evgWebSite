@@ -6,11 +6,6 @@
  *   - script.js
  */
 
-// ── Vibration ────────────────────────────────────────────────────
-function _vibrate(pattern) {
-  navigator.vibrate && navigator.vibrate(pattern);
-}
-
 // ── Catégories du quiz "identification" ──────────────────────────
 // Chacune réutilise le même déroulé (duo/carré/cash), seule la source
 // d'image et le sous-ensemble de performers éligibles changent.
@@ -116,6 +111,46 @@ function prepareIntro(category) {
   showSection('section-quiz-intro');
 }
 
+/**
+ * Tire `n` performers du `pool` sans remise, avec un biais de difficulté
+ * progressif : la 1ère question favorise les performers les mieux classés
+ * (percentile de `score` au sein du pool), la dernière favorise les moins
+ * bien classés, avec un dégradé neutre au milieu. Force du biais réglable
+ * via `CONFIG.QUIZ_SCORE_BIAS_STRENGTH` (0 = tirage uniforme classique).
+ * @param {Array} pool
+ * @param {number} n
+ * @returns {Array}
+ */
+function pickQuizQuestionsByScore(pool, n) {
+  const strength = CONFIG.QUIZ_SCORE_BIAS_STRENGTH || 0;
+  if (strength <= 0 || pool.length <= 1) return shuffle(pool).slice(0, n);
+
+  // Percentile de score au sein du pool (0 = moins bien classé, 1 = mieux classé)
+  // — relatif au pool de la catégorie, pas à un seuil de score absolu.
+  const sorted = [...pool].sort((a, b) => (a.score || 0) - (b.score || 0));
+  const percentile = new Map(sorted.map((p, i) => [p, i / (sorted.length - 1)]));
+
+  const remaining = pool.slice();
+  const picks = [];
+  for (let i = 0; i < n && remaining.length > 0; i++) {
+    // +1 à la 1ère question (favorise score haut) → -1 à la dernière (favorise score bas)
+    const bias    = n > 1 ? 1 - (2 * i) / (n - 1) : 0;
+    const weights = remaining.map((p) => Math.exp(strength * bias * percentile.get(p)));
+    const total   = weights.reduce((sum, w) => sum + w, 0);
+
+    let r   = Math.random() * total;
+    let idx = weights.length - 1;
+    for (let j = 0; j < weights.length; j++) {
+      r -= weights[j];
+      if (r <= 0) { idx = j; break; }
+    }
+
+    picks.push(remaining[idx]);
+    remaining.splice(idx, 1);
+  }
+  return picks;
+}
+
 async function startQuiz() {
   if (!performerData) {
     setLoading(true);
@@ -135,7 +170,7 @@ async function startQuiz() {
 
   currentGameType    = pendingCategory;
   currentImageField  = cat.imageField;
-  quizQuestions      = shuffle(pool).slice(0, Math.min(CONFIG.QUIZ_ROUNDS, pool.length));
+  quizQuestions      = pickQuizQuestionsByScore(pool, Math.min(CONFIG.QUIZ_ROUNDS, pool.length));
   quizCurrentIdx     = 0;
   quizScore          = 0;
 
@@ -349,14 +384,6 @@ function saveAndRestartQuiz() {
 function saveAndGoToMenu() {
   _saveCurrentResult();
   showSection('section-menu');
-}
-
-
-// ── Navigation entre sections ────────────────────────────────────
-
-function showSection(id) {
-  document.querySelectorAll(".game-section").forEach((s) => s.classList.add("hidden"));
-  document.getElementById(id).classList.remove("hidden");
 }
 
 

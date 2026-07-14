@@ -49,8 +49,8 @@ const AUTH_ADMIN_EVG_KEY = CONFIG.LS_ADMIN_ACTIVE_EVG;
 
   // ── Données fictives (format réel de l'API) ──────────────────
   const MOCK_CONFIGS = {
-    William: { quiz: true, heta: false, digamma: false, beta: true,  scratch: true, flash: true  },
-    Thomas:  { quiz: true, heta: true,  digamma: false, beta: false, scratch: true, flash: false },
+    William: { quiz: true, heta: false, digamma: false, beta: true,  scratch: true, flash: true,  questions: true  },
+    Thomas:  { quiz: true, heta: true,  digamma: false, beta: false, scratch: true, flash: false, questions: true  },
   };
 
   const MOCK_SCORES = [
@@ -126,7 +126,7 @@ const AUTH_ADMIN_EVG_KEY = CONFIG.LS_ADMIN_ACTIVE_EVG;
         const evgName = (fd.get('evg_name') || '').toString().trim();
         console.log(`[MOCK] ADDUSER "${evgName}"`);
         if (!evgName) return _json({ status: 'error', message: 'Nom d\'utilisateur manquant' });
-        MOCK_CONFIGS[evgName] = { quiz: false, heta: false, digamma: false, beta: false, scratch: false, flash: false };
+        MOCK_CONFIGS[evgName] = { quiz: false, heta: false, digamma: false, beta: false, scratch: false, flash: false, questions: false };
         return _json({ status: 'success', message: `Utilisateur '${evgName}' ajouté avec succès avec toutes les options par défaut (false)` });
       }
 
@@ -396,56 +396,43 @@ async function getUIStrings() {
   return strings;
 }
 
-// ── SCORE_URL chiffrée ────────────────────────────────────────────
+// ── URLs de GAS chiffrées (SCORE_URL, IMAGES_URL, QUESTIONS_URL) ──
 // AUTH_URL reste en clair (nécessaire pour obtenir le decryptionToken au
-// login — dépendance circulaire sinon). SCORE_URL, elle, n'est nécessaire
-// qu'après authentification (scores.html requiert désormais un login comme
-// le reste du site) : elle peut donc être chiffrée avec le même token.
-
-let _scoreUrlCache = null;
-
-/**
- * Retourne l'URL du GAS de scores, en clair, en mémoire uniquement.
- * - Dev/mock : CONFIG.SCORE_URL (chaîne en clair) si présente → utilisée telle quelle.
- * - Prod : CONFIG.SCORE_URL_ENC (enveloppe chiffrée) → déchiffrée via le
- *   decryptionToken de la session (nécessite d'être authentifié).
- *
- * @returns {Promise<string>}
- */
-async function getScoreUrl() {
-  if (CONFIG.SCORE_URL) return CONFIG.SCORE_URL;
-  if (_scoreUrlCache) return _scoreUrlCache;
-
-  const token = getAuthToken();
-  if (!token) throw new Error('SCORE_URL indisponible : utilisateur non authentifié.');
-
-  const plainBuf = await _decryptEnvelope(CONFIG.SCORE_URL_ENC, token);
-  _scoreUrlCache = new TextDecoder().decode(plainBuf);
-  return _scoreUrlCache;
-}
-
-// ── IMAGES_URL chiffrée (images personnalisées — Séquence Mémo) ──
-
-let _imagesUrlCache = null;
+// login — dépendance circulaire sinon). Les autres URLs de GAS ne sont
+// nécessaires qu'après authentification : elles peuvent donc être
+// chiffrées avec le même token. Les trois getters suivent le même schéma
+// (clé CONFIG en clair pour le dev/mock, sinon déchiffrement de la clé
+// `..._ENC` via le decryptionToken de la session, mis en cache en mémoire
+// pour la durée de la page) — voir `_makeEncryptedUrlGetter`.
 
 /**
- * Retourne l'URL du GAS de récupération des images personnalisées.
- * Même logique que getScoreUrl() : CONFIG.IMAGES_URL en clair en dev/mock,
- * sinon déchiffrement de CONFIG.IMAGES_URL_ENC via le decryptionToken.
- *
- * @returns {Promise<string>}
+ * Fabrique un getter d'URL de GAS chiffrée : renvoie `CONFIG[plainKey]` si
+ * présente (dev/mock), sinon déchiffre `CONFIG[encKey]` via le
+ * decryptionToken de la session et met le résultat en cache en mémoire
+ * (fermeture privée, durée de la page).
+ * @param {string} plainKey - clé CONFIG en clair (ex: "SCORE_URL")
+ * @param {string} encKey - clé CONFIG chiffrée (ex: "SCORE_URL_ENC")
+ * @returns {() => Promise<string>}
  */
-async function getImagesUrl() {
-  if (CONFIG.IMAGES_URL) return CONFIG.IMAGES_URL;
-  if (_imagesUrlCache) return _imagesUrlCache;
+function _makeEncryptedUrlGetter(plainKey, encKey) {
+  let cache = null;
+  return async function () {
+    if (CONFIG[plainKey]) return CONFIG[plainKey];
+    if (cache) return cache;
 
-  const token = getAuthToken();
-  if (!token) throw new Error('IMAGES_URL indisponible : utilisateur non authentifié.');
+    const token = getAuthToken();
+    if (!token) throw new Error(`${plainKey} indisponible : utilisateur non authentifié.`);
+    if (!CONFIG[encKey]) throw new Error(`${encKey} non configurée (voir DEVELOPER.md § Déploiement).`);
 
-  const plainBuf = await _decryptEnvelope(CONFIG.IMAGES_URL_ENC, token);
-  _imagesUrlCache = new TextDecoder().decode(plainBuf);
-  return _imagesUrlCache;
+    const plainBuf = await _decryptEnvelope(CONFIG[encKey], token);
+    cache = new TextDecoder().decode(plainBuf);
+    return cache;
+  };
 }
+
+const getScoreUrl     = _makeEncryptedUrlGetter('SCORE_URL',     'SCORE_URL_ENC');
+const getImagesUrl    = _makeEncryptedUrlGetter('IMAGES_URL',    'IMAGES_URL_ENC');
+const getQuestionsUrl = _makeEncryptedUrlGetter('QUESTIONS_URL', 'QUESTIONS_URL_ENC');
 
 /**
  * Récupère la liste des images personnalisées d'un EVG.
@@ -684,7 +671,6 @@ function getCachedConfigs() {
 }
 
 
-
 // ══════════════════════════════════════════════════════════════════
 //  AUTHENTIFICATION — Vérification automatique
 // ══════════════════════════════════════════════════════════════════
@@ -724,14 +710,6 @@ function checkAuthentication() {
 // ══════════════════════════════════════════════════════════════════
 
 /**
- * Échappe une valeur pour une insertion sûre dans du HTML — texte ou
- * attribut (guillemets doubles/simples inclus). À utiliser systématiquement
- * avant toute interpolation de données externes (performers_data.json,
- * scores, noms d'EVG) dans un template `innerHTML`.
- * @param {*} value
- * @returns {string}
- */
-/**
  * Valide une page cible issue de `?page=...` avant toute navigation, pour
  * empêcher une redirection ouverte (open redirect) vers un domaine externe
  * ou un schéma dangereux (javascript:, data:, //host, etc.). N'autorise que
@@ -746,6 +724,14 @@ function sanitizeTargetPage(page) {
   return page;
 }
 
+/**
+ * Échappe une valeur pour une insertion sûre dans du HTML — texte ou
+ * attribut (guillemets doubles/simples inclus). À utiliser systématiquement
+ * avant toute interpolation de données externes (performers_data.json,
+ * scores, noms d'EVG) dans un template `innerHTML`.
+ * @param {*} value
+ * @returns {string}
+ */
 function escapeHtml(value) {
   return String(value)
     .replace(/&/g, '&amp;')
@@ -837,6 +823,26 @@ function preloadImages(urls) {
         })
     )
   );
+}
+
+/**
+ * Vibration courte (retour haptique) — no-op silencieux si l'API ou le
+ * matériel n'est pas disponible (desktop, iOS Safari…).
+ * @param {number|number[]} pattern
+ */
+function _vibrate(pattern) {
+  navigator.vibrate && navigator.vibrate(pattern);
+}
+
+/**
+ * Affiche la section `id` parmi les `.game-section` de la page (masque
+ * toutes les autres) — convention partagée par les pages mini-jeu à
+ * sections multiples (quiz, flash, scratch).
+ * @param {string} id
+ */
+function showSection(id) {
+  document.querySelectorAll('.game-section').forEach((s) => s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
 }
 
 

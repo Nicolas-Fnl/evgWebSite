@@ -7,7 +7,7 @@
  *
  * Dépendances (à charger avant ce fichier) :
  *   - config.js
- *   - script.js  (shuffle)
+ *   - script.js  (shuffle, _vibrate, showSection)
  */
 
 // ── Constantes ───────────────────────────────────────────────────
@@ -16,11 +16,6 @@ const BRUSH_BASE       = 10;     // rayon de base du grattoir (px CSS)
 const BRUSH_STEP       = 6;      // pas d'interpolation (px) — < BRUSH_BASE pour trait continu
 const CHECK_EVERY      = 8;      // vérifier le seuil toutes les N opérations
 const PARTICLE_EVERY   = 18;     // spawner des particules tous les N px parcourus
-
-// ── Vibration ────────────────────────────────────────────────────
-function _vibrate(pattern) {
-  navigator.vibrate && navigator.vibrate(pattern);
-}
 
 // Throttle pour la micro-vibration de grattage.
 let _lastScratchVibrate = 0;
@@ -535,11 +530,3 @@ function _revealFull(canvas, ctx, size) {
 }
 
 
-// ══════════════════════════════════════════════════════════════════
-//  NAVIGATION
-// ══════════════════════════════════════════════════════════════════
-
-function showSection(id) {
-  document.querySelectorAll('.game-section').forEach(s => s.classList.add('hidden'));
-  document.getElementById(id).classList.remove('hidden');
-}

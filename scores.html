@@ -60,6 +60,7 @@
     let currentTab     = 'quiz-galerie';
     let rawData        = [];   // tableau brut renvoyé par l'API
     let currentConfigs = null; // configs de l'EVG courant — masque les jeux désactivés
+    let uiStrings       = {};  // chaînes d'interface déchiffrées (titres des catégories sensibles)
 
     // ── Init ──────────────────────────────────────────────────────
     document.addEventListener('DOMContentLoaded', async () => {
@@ -70,6 +71,11 @@
         document.querySelectorAll('.evg-nav-name').forEach(el => { el.textContent = '?'; });
       }
       updateTabStyles();
+      try {
+        uiStrings = await getUIStrings();
+      } catch (err) {
+        console.warn('[STRINGS] Échec du chargement des textes :', err);
+      }
       await loadScoreGating();
       applyTabGating();
       updateTabStyles();
@@ -258,10 +264,16 @@
 
     function renderLeaderboard(content, jeu) {
       if (jeu === 'quiz-galerie') {
+        // Titres des catégories sensibles issus des mêmes chaînes chiffrées
+        // que le menu du Quiz (uiStrings, voir applyUIStrings() dans quiz.js)
+        // — jamais en clair dans ce fichier. Repli neutre tant que non chargées.
+        const hetaTitle    = `🔥 ${uiStrings['menu-heta-title']    || 'Quiz'}`;
+        const digammaTitle = `💦 ${uiStrings['menu-digamma-title'] || 'Quiz'}`;
+        const betaTitle    = `🖤 ${uiStrings['menu-special-title'] || 'Défi'}`;
         content.innerHTML = renderLeaderboardSection('quiz-galerie', '❓ Quiz', 'pts', 'quiz') +
-                            renderLeaderboardSection('heta-quiz',    '🔥 Quiz Hot', 'pts', 'heta') +
-                            renderLeaderboardSection('quiz-digamma', '💦 Quiz Facial', 'pts', 'digamma') +
-                            renderLeaderboardSection('beta-streak',  '🖤 Has she been blacked?', 'streak', 'beta');
+                            renderLeaderboardSection('heta-quiz',    hetaTitle,    'pts', 'heta') +
+                            renderLeaderboardSection('quiz-digamma', digammaTitle, 'pts', 'digamma') +
+                            renderLeaderboardSection('beta-streak',  betaTitle,    'streak', 'beta');
         return;
       }
       content.innerHTML = renderLeaderboardSection(

@@ -82,7 +82,7 @@
   <script>
 
     // ── Définition des fonctionnalités (doit correspondre aux colonnes
-    //    du Sheet "Configs" : quiz, heta, digamma, beta, scratch, flash) ──
+    //    du Sheet "Configs" : quiz, heta, digamma, beta, scratch, flash, questions) ──
     const FEATURES = [
       {
         key:            'quiz',
@@ -122,8 +122,15 @@
       {
         key:            'flash',
         emoji:          '🧠',
-        label:          'Jeu Mémoire',
+        label:          'Séquence Mémo',
         desc:           'Tuile du menu principal',
+        defaultEnabled: true,
+      },
+      {
+        key:            'questions',
+        emoji:          '🧐',
+        label:          'Questions',
+        desc:           'Tuile du menu principal — pas de classement',
         defaultEnabled: true,
       },
     ];

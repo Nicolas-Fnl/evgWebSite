@@ -50,6 +50,23 @@ const CONFIG = {
   /** Seuil de similarité (0–1) pour valider une réponse CASH. */
   CASH_SIMILARITY_THRESHOLD: 0.80,
 
+  /**
+   * Force du biais de tirage par score (performer.score, 0–100) sur l'ordre
+   * des questions d'une partie de quiz. La 1ère question favorise les
+   * performers les mieux classés (score élevé) au sein du pool éligible à
+   * la catégorie, la dernière favorise les moins bien classés, avec un
+   * dégradé progressif entre les deux (tirage neutre au milieu). Le
+   * classement est relatif au pool de la partie (percentile), pas à un
+   * seuil de score absolu — s'adapte à chaque catégorie (Heta/Digamma ont
+   * des pools plus restreints que le Quiz principal).
+   *
+   * 0    = tirage uniforme (comportement identique à un shuffle() classique).
+   * ~2-3 = biais léger, encore beaucoup de variation.
+   * ~4-5 = biais marqué ("presque toujours" le mieux classé en 1ère question).
+   * Au-delà de ~8, devient quasi déterministe (perd l'intérêt du tirage aléatoire).
+   */
+  QUIZ_SCORE_BIAS_STRENGTH: 8,
+
   // ─── Séquence Mémo ──────────────────────────────────────────────
 
   /**
@@ -141,6 +158,25 @@ const CONFIG = {
    */
   // IMAGES_URL: "https://script.google.com/macros/s/.../exec",
   IMAGES_URL_ENC: {"v": 1, "salt": "N5JcImNzm/3u4tYYC1km/g==", "iv": "cS7c2qfUw4g1FUc3", "data": "CvR1D0pAo+Qwlv01nfIUCbM96EVszhxnE6ZMIaAP7DGy7M1NaXHcDJ7yx1rxVuXdE2Ftwp0z3GypnEjcH6U74hXVQNsF/FnhpXw3Qm9U/VUw8KktBJVQ+a3aVb1Zr0P67OseGe9xWqrn0U2x7n//lyS0xSYq+ByQMQvMslzUqew="},
+
+  /**
+   * URL du GAS externe du mini-jeu "Questions" (questions.html) — répond en
+   * GET, sans paramètre, avec le tableau de questions en clair :
+   *   GET QUESTIONS_URL
+   *     → [{ id, question, type: "QCM"|"Saisie"|"Nombre", reponse_correcte, options: [] }, ...]
+   *   - QCM    : options = choix proposés, reponse_correcte = un des choix.
+   *   - Saisie : options = [], reponse_correcte = chaîne attendue (comparée
+   *              avec tolérance, voir isSimilarEnough()/CASH_SIMILARITY_THRESHOLD).
+   *   - Nombre : options = [min, max], reponse_correcte = valeur numérique exacte.
+   *
+   * Chiffrée (voir DEVELOPER.md § Sécurité), déchiffrée en mémoire par
+   * getQuestionsUrl() (script.js) via le decryptionToken de la session.
+   *
+   * En dev local : décommenter QUESTIONS_URL (URL en clair) ci-dessous —
+   * getQuestionsUrl() l'utilise directement sans passer par QUESTIONS_URL_ENC.
+   */
+  // QUESTIONS_URL: "https://script.google.com/macros/s/.../exec",
+  QUESTIONS_URL_ENC: {"v": 1, "salt": "TmmbSkWDV9irFuG4yX138A==", "iv": "QthkTJo896AGAelW", "data": "iYVI0lPtTnI5MNNKGZscwR2tq9YzipsTEDN/HDt++B3OWepmyNO2JuXccamj1iBxXwZnd5O/BQjE1TfLXRj22TYEohKfQZGKYfWGBvFNaFoOq8Ex6MtuiObRj/B0NqYwZJPcyR93jKxhdQa4fDWdzPdzQGCKPoBhI2BnvJ9Yx/I="},
 
   // ─── localStorage keys ──────────────────────────────────────────
   LS_HOST:             "evg_host",          // prénom extrait de l'identifiant (avant le #)

@@ -15,6 +15,35 @@
 .flash-in { animation: flashIn 0.18s cubic-bezier(.2, .8, .4, 1) forwards; }
 .fade-up  { animation: fadeUp  0.35s ease-out forwards; }
 
+/* ── Feedback réussite/échec (Questions) ───────────────────────── */
+
+@keyframes popIn {
+  0%   { opacity: 0; transform: scale(0.4) rotate(-8deg); }
+  60%  { opacity: 1; transform: scale(1.15) rotate(3deg); }
+  100% { opacity: 1; transform: scale(1)    rotate(0deg); }
+}
+
+@keyframes shakeX {
+  10%, 90%      { transform: translateX(-1px); }
+  20%, 80%      { transform: translateX(2px);  }
+  30%, 50%, 70% { transform: translateX(-5px); }
+  40%, 60%      { transform: translateX(5px);  }
+}
+
+@keyframes flashRingCorrect {
+  0%   { box-shadow: 0 0 0 0 rgba(74, 222, 128, .55); }
+  100% { box-shadow: 0 0 0 16px rgba(74, 222, 128, 0); }
+}
+
+@keyframes flashRingWrong {
+  0%   { box-shadow: 0 0 0 0 rgba(248, 113, 113, .55); }
+  100% { box-shadow: 0 0 0 16px rgba(248, 113, 113, 0); }
+}
+
+.anim-pop-in         { animation: popIn 0.45s cubic-bezier(.34, 1.56, .64, 1) both; }
+.anim-flash-correct  { animation: flashRingCorrect 0.7s ease-out; }
+.anim-flash-wrong    { animation: flashRingWrong 0.7s ease-out, shakeX 0.4s ease-in-out; }
+
 /* ── Transitions ─────────────────────────────────────────────── */
 
 #quiz-image { transition: opacity 0.25s ease; }

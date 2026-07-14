@@ -25,6 +25,10 @@ Jeu de mémoire en 5 manches progressives : mémorisez une séquence de tuiles q
 
 Jeu de grattage sans score, pour désigner rapidement qui paie la prochaine tournée.
 
+### 🧐 Questions
+
+Répondez à une série de questions sur le marié, une à la fois — choix multiple, saisie libre ou curseur selon la question. Pas de classement pour ce mini-jeu.
+
 ### Galerie
 
 Parcourez la galerie des performers avec tri et filtres.
