@@ -20,6 +20,23 @@ document.addEventListener('DOMContentLoaded', () => {
   loadQuestions();
 });
 
+// Entrée valide la question courante (ou passe à la suivante une fois
+// validée) — pratique pour le type "Saisie" au clavier physique.
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+  if (document.getElementById('state-question').classList.contains('hidden')) return;
+
+  const validateBtn = document.getElementById('validate-btn');
+  const nextBtn      = document.getElementById('next-btn');
+  if (!validateBtn.classList.contains('hidden') && !validateBtn.disabled) {
+    e.preventDefault();
+    validateCurrent();
+  } else if (!nextBtn.classList.contains('hidden')) {
+    e.preventDefault();
+    nextQuestion();
+  }
+});
+
 // ── Chargement ────────────────────────────────────────────────────
 
 async function loadQuestions() {
