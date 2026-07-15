@@ -56,10 +56,11 @@
         <div id="question-card" class="bg-white/5 rounded-2xl p-5 flex-1 flex flex-col border-2 border-transparent">
           <p id="question-text" class="font-black text-white text-lg mb-4"></p>
           <div id="question-body" class="flex-1"></div>
-          <div id="question-feedback" class="hidden mt-4 items-center gap-3">
+          <div id="question-feedback" class="hidden mt-4 items-center gap-3 p-3 rounded-xl">
             <span id="feedback-icon" class="text-4xl leading-none"></span>
-            <p id="feedback-text" class="text-base font-black"></p>
+            <p id="feedback-text" class="text-lg font-black"></p>
           </div>
+          <p id="feedback-comment" class="hidden mt-2 text-base text-gray-200 bg-white/5 rounded-xl p-3"></p>
         </div>
 
         <button id="validate-btn" onclick="validateCurrent()"

@@ -48,7 +48,15 @@ const CONFIG = {
   QUIZ_POINTS: { duo: 1, carre: 3, cash: 5 },
 
   /** Seuil de similarité (0–1) pour valider une réponse CASH. */
-  CASH_SIMILARITY_THRESHOLD: 0.80,
+  CASH_SIMILARITY_THRESHOLD: 0.70,
+
+  /**
+   * Seuil de similarité (0–1) pour valider une réponse "Saisie" du mini-jeu
+   * Questions (questions.js) — plus tolérant que CASH_SIMILARITY_THRESHOLD
+   * car les réponses attendues sont souvent des noms courts, où chaque
+   * lettre pèse plus lourd dans le ratio (ex: "Apolline" vs "appoline").
+   */
+  QUESTIONS_SIMILARITY_THRESHOLD: 0.70,
 
   /**
    * Force du biais de tirage par score (performer.score, 0–100) sur l'ordre
@@ -163,11 +171,14 @@ const CONFIG = {
    * URL du GAS externe du mini-jeu "Questions" (questions.html) — répond en
    * GET, sans paramètre, avec le tableau de questions en clair :
    *   GET QUESTIONS_URL
-   *     → [{ id, question, type: "QCM"|"Saisie"|"Nombre", reponse_correcte, options: [] }, ...]
-   *   - QCM    : options = choix proposés, reponse_correcte = un des choix.
+   *     → [{ id, question, type: "QCM"|"Saisie"|"Nombre", reponse_correcte, options: [], commentaire? }, ...]
+   *   - QCM    : options = choix proposés, reponse_correcte = un des choix,
+   *              ou plusieurs choix valides séparés par une virgule (ex: "1, 2, 3").
    *   - Saisie : options = [], reponse_correcte = chaîne attendue (comparée
-   *              avec tolérance, voir isSimilarEnough()/CASH_SIMILARITY_THRESHOLD).
+   *              avec tolérance, voir isSimilarEnough()/QUESTIONS_SIMILARITY_THRESHOLD).
    *   - Nombre : options = [min, max], reponse_correcte = valeur numérique exacte.
+   *   - commentaire (optionnel) : texte affiché sous le verdict après validation
+   *     (quelle que soit la réponse), voir validateCurrent() dans questions.js.
    *
    * Chiffrée (voir DEVELOPER.md § Sécurité), déchiffrée en mémoire par
    * getQuestionsUrl() (script.js) via le decryptionToken de la session.

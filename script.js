@@ -790,19 +790,21 @@ function levenshtein(a, b) {
 }
 
 /**
- * Retourne true si la saisie ressemble au nom attendu
- * à ≥ CASH_SIMILARITY_THRESHOLD.
+ * Retourne true si la saisie ressemble au nom attendu à ≥ threshold
+ * (CONFIG.CASH_SIMILARITY_THRESHOLD par défaut — appelants spécifiques,
+ * ex. questions.js, peuvent passer un seuil plus tolérant).
  * @param {string} input
  * @param {string} expected
+ * @param {number} [threshold]
  * @returns {boolean}
  */
-function isSimilarEnough(input, expected) {
+function isSimilarEnough(input, expected, threshold = CONFIG.CASH_SIMILARITY_THRESHOLD) {
   const a = input.toLowerCase().trim();
   const b = expected.toLowerCase().trim();
   if (!a.length && !b.length) return true;
   const dist   = levenshtein(a, b);
   const maxLen = Math.max(a.length, b.length);
-  return maxLen > 0 && 1 - dist / maxLen >= CONFIG.CASH_SIMILARITY_THRESHOLD;
+  return maxLen > 0 && 1 - dist / maxLen >= threshold;
 }
 
 /**

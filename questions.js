@@ -82,7 +82,11 @@ function loadCurrentQuestion() {
   card.className = 'bg-white/5 rounded-2xl p-5 flex-1 flex flex-col border-2 border-transparent';
 
   const feedback = document.getElementById('question-feedback');
-  feedback.className = 'hidden mt-4 items-center gap-3';
+  feedback.className = 'hidden mt-4 items-center gap-3 p-3 rounded-xl';
+
+  const comment = document.getElementById('feedback-comment');
+  comment.className = 'hidden mt-2 text-base text-gray-200 bg-white/5 rounded-xl p-3';
+  comment.textContent = '';
 
   const nextBtn = document.getElementById('next-btn');
   nextBtn.classList.add('hidden');
@@ -213,13 +217,19 @@ function validateCurrent() {
   const text     = document.getElementById('feedback-text');
 
   feedback.classList.remove('hidden');
-  feedback.classList.add('flex');
+  feedback.classList.add('flex', isCorrect ? 'bg-green-500/10' : 'bg-red-500/10');
   icon.classList.add('anim-pop-in');
   icon.textContent = isCorrect ? '✅' : '❌';
-  text.className   = `text-base font-black ${isCorrect ? 'text-green-400' : 'text-red-400'}`;
-  text.textContent = isCorrect
-    ? 'Bonne réponse !'
-    : `Raté — bonne réponse : ${q.reponse_correcte}`;
+  text.className   = `text-lg font-black ${isCorrect ? 'text-green-400' : 'text-red-400'}`;
+  text.textContent = isCorrect ? 'Bonne réponse !' : 'Raté';
+
+  // Commentaire optionnel de la question (champ "commentaire" côté API),
+  // affiché sous le verdict — quel que soit le résultat.
+  if (q.commentaire) {
+    const comment = document.getElementById('feedback-comment');
+    comment.textContent = `Sa réponse : ${q.commentaire}`;
+    comment.classList.remove('hidden');
+  }
 
   // Verrouille les contrôles de la question une fois validée.
   document.querySelectorAll('#question-body [data-qcm-option], #question-body input')
@@ -268,12 +278,16 @@ function checkAnswer(q, given) {
   if (given === undefined || given === null || given === '') return false;
 
   if (q.type === 'QCM') {
-    return String(given) === String(q.reponse_correcte);
+    // reponse_correcte peut lister plusieurs options valides séparées par
+    // une virgule (ex: "1, 2, 3") — bonne réponse si l'une d'elles correspond.
+    const validAnswers = String(q.reponse_correcte).split(',').map((s) => s.trim());
+    return validAnswers.includes(String(given).trim());
   }
   if (q.type === 'Saisie') {
-    // Même tolérance aux fautes de frappe que le mode CASH du Quiz
-    // (distance de Levenshtein, seuil CONFIG.CASH_SIMILARITY_THRESHOLD).
-    return isSimilarEnough(String(given), String(q.reponse_correcte));
+    // Tolérance aux fautes de frappe (distance de Levenshtein), seuil
+    // dédié CONFIG.QUESTIONS_SIMILARITY_THRESHOLD (plus souple que le
+    // mode CASH du Quiz).
+    return isSimilarEnough(String(given), String(q.reponse_correcte), CONFIG.QUESTIONS_SIMILARITY_THRESHOLD);
   }
   if (q.type === 'Nombre') {
     return Number(given) === Number(q.reponse_correcte);
